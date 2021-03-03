@@ -35,13 +35,13 @@ export class UniswapCacheService {
 
   private async getObjectFromRedis<T>(key: string): Promise<T> {
     try {
-      return JSON.parse(await this.redis.get(key));
+      return JSON.parse(<string>await this.redis.get(key));
     } catch (e) {
       throw e;
     }
   }
 
-  private async setObjectToRedis<T>(key: string, data: T): Promise<string> {
+  private async setObjectToRedis<T>(key: string, data: T): Promise<IORedis.Ok | null> {
     try {
       return this.redis.set(key, JSON.stringify(data));
     } catch (e) {

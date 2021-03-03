@@ -1,7 +1,7 @@
 import UniswapService from '../../services/outgoing/uniswap/uniswap.service';
 import { Logger } from 'winston';
 import LoggerInstance from '../../helpers/logger';
-import { IGroupedTransactions } from '../../interfaces/etherscan.interfaces';
+import { IGroupedTransactions, ITokenBalanceItem, ITokenBalanceItemBase } from '../../interfaces/etherscan.interfaces';
 import { buildBalanceTransformer } from '../../helpers/tokens.helper';
 import BigNumber from 'bignumber.js';
 
@@ -13,11 +13,13 @@ export class ParseTransaction {
     this.uniswapService = Container.get(UniswapService);
   }
 
-  public async parseTransactionBalancePrice(transactions: IGroupedTransactions[]): Promise<IGroupedTransactions[]> {
+  public async parseTransactionBalancePrice(
+    transactions: IGroupedTransactions<ITokenBalanceItemBase>[],
+  ): Promise<IGroupedTransactions<ITokenBalanceItem>[]> {
     try {
       const resultWithParsedBalance = await Promise.all(
         transactions.map(async (value, index, array) => {
-          const valueCopy = { ...value };
+          const valueCopy = { ...value } as IGroupedTransactions<ITokenBalanceItem>;
           const prices = await this.uniswapService.checkTokenArrPriceInUSDandETHLimiter({
             tokens: Object.keys(value.balance),
             blockNumber: valueCopy.blockNumber,

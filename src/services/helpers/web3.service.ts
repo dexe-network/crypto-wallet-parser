@@ -2,7 +2,7 @@ import { Service } from 'typedi';
 import Web3 from 'web3';
 import config from '../../config';
 import Bottleneck from 'bottleneck';
-import { ITransactionReceipt } from '../../interfaces/jobs/parseWallet.interface';
+import { ITransactionReceipt } from '../../interfaces/parser/parseWallet.interface';
 
 @Service()
 export default class Web3Service {

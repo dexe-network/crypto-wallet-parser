@@ -80,9 +80,9 @@ export interface ITradeEvent {
   costETH: BigNumber;
   price: IEventTokenPrice;
   startDep: IStartDep;
-  balance?: BigNumber;
-  sellOperations?: ISellOperations[];
-  averageStartDep?: IAverageStartDep;
+  balance: BigNumber;
+  sellOperations: ISellOperations[];
+  averageStartDep: IAverageStartDep;
 }
 
 export interface ISellOperations {

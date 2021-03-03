@@ -2,7 +2,12 @@ import config from '../../../../config';
 import BigNumber from 'bignumber.js';
 import UniswapService from '../../services/outgoing/uniswap/uniswap.service';
 import moment from 'moment';
-import { IGroupedTransactions, ITokenBalanceInfo } from '../../interfaces/etherscan.interfaces';
+import {
+  IGroupedTransactions,
+  ITokenBalanceInfo,
+  ITokenBalanceItem,
+  ITokenBalanceItemBase,
+} from '../../interfaces/etherscan.interfaces';
 import lodash from 'lodash';
 import {
   IAppTokenInfo,
@@ -39,7 +44,7 @@ export class TradesBuilderV2 {
     this.parseTransactionWallet = new ParseTransaction();
   }
 
-  public async buildTrades(data: IGroupedTransactions[]): Promise<ITradeIterateObject> {
+  public async buildTrades(data: IGroupedTransactions<ITokenBalanceItem>[]): Promise<ITradeIterateObject> {
     const rawResult = await this.behaviourIterator(data);
 
     const openTrades = Object.values(rawResult)
@@ -57,8 +62,8 @@ export class TradesBuilderV2 {
 
   private async generateVirtualTrades(
     openTrades: ITradeItem[],
-    lastGroupedTransaction: IGroupedTransactions,
-  ): Promise<IGroupedTransactions[]> {
+    lastGroupedTransaction: IGroupedTransactions<ITokenBalanceItem>,
+  ): Promise<IGroupedTransactions<ITokenBalanceItem>[]> {
     try {
       const currentBlockNumber = await this.web3Service.getCurrentBlockNumberLimiter();
       return await this.parseTransactionWallet.parseTransactionBalancePrice(
@@ -71,16 +76,16 @@ export class TradesBuilderV2 {
 
   private generateVirtualTransactions(
     openTrades: ITradeItem[],
-    lastGroupedTransaction: IGroupedTransactions,
+    lastGroupedTransaction: IGroupedTransactions<ITokenBalanceItem>,
     currentBlockNumber: number,
-  ): IGroupedTransactions[] {
-    return openTrades.reduce<IGroupedTransactions[]>((accum, value, index) => {
+  ): IGroupedTransactions<ITokenBalanceItemBase>[] {
+    return openTrades.reduce<IGroupedTransactions<ITokenBalanceItemBase>[]>((accum, value, index) => {
       const balanceBeforeTransaction = index === 0 ? lastGroupedTransaction.balance : accum[index - 1].balance;
       const result = {
-        normalTransactions: undefined,
-        internalTransactions: undefined,
-        erc20Transactions: undefined,
-        erc721Transactions: undefined,
+        normalTransactions: [],
+        internalTransactions: [],
+        erc20Transactions: [],
+        erc721Transactions: [],
         balanceBeforeTransaction: balanceBeforeTransaction,
         balance: this.generateBalanceDiffForVirtualTradePnl(value, balanceBeforeTransaction),
         blockNumber: currentBlockNumber - 10,
@@ -94,7 +99,10 @@ export class TradesBuilderV2 {
     }, []);
   }
 
-  private generateBalanceDiffForVirtualTradePnl(trade: ITradeItem, balance: ITokenBalanceInfo): ITokenBalanceInfo {
+  private generateBalanceDiffForVirtualTradePnl(
+    trade: ITradeItem,
+    balance: ITokenBalanceInfo<ITokenBalanceItemBase>,
+  ): ITokenBalanceInfo<ITokenBalanceItemBase> {
     return {
       ...balance,
       [trade.tokenAddress]: {
@@ -107,7 +115,10 @@ export class TradesBuilderV2 {
     };
   }
 
-  private async behaviourIterator(data: IGroupedTransactions[], initValue = {}): Promise<ITradeIterateObject> {
+  private async behaviourIterator(
+    data: IGroupedTransactions<ITokenBalanceItem>[],
+    initValue = {},
+  ): Promise<ITradeIterateObject> {
     console.log('behaviourIterator', data.length);
     return data.reduce<Promise<ITradeIterateObject>>(async (accumulatorValuePromise, currentItem, index) => {
       const accumulatorValue = await accumulatorValuePromise;
@@ -145,7 +156,7 @@ export class TradesBuilderV2 {
     accumulatorValue: ITradeIterateObject,
     operation: IOperationAmount,
     state: IOperationItem,
-    balanceBeforeTransaction: ITokenBalanceInfo,
+    balanceBeforeTransaction: ITokenBalanceInfo<ITokenBalanceItem>,
   ): void {
     const openTradeIndex = (accumulatorValue[operation.address]?.trades || []).findIndex(
       (x) => x.tradeStatus === TradeStatus.OPEN,
@@ -165,7 +176,7 @@ export class TradesBuilderV2 {
     accumulatorValue: ITradeIterateObject,
     operation: IOperationAmount,
     state: IOperationItem,
-    balanceBeforeTransaction: ITokenBalanceInfo,
+    balanceBeforeTransaction: ITokenBalanceInfo<ITokenBalanceItem>,
   ): void {
     if (accumulatorValue[operation.address]) {
       const openTradeIndex = accumulatorValue[operation.address].trades.findIndex(
@@ -195,7 +206,7 @@ export class TradesBuilderV2 {
     state: IOperationItem,
     data: ITradeIterateItem,
     openTradeIndex: number,
-    balanceBeforeTransaction: ITokenBalanceInfo,
+    balanceBeforeTransaction: ITokenBalanceInfo<ITokenBalanceItem>,
   ): void {
     const tradeEvent = this.createNewTradeEvent(
       state,
@@ -312,7 +323,7 @@ export class TradesBuilderV2 {
   private openNewTrade(
     state: IOperationItem,
     operation: IOperationAmount,
-    balanceBeforeTransaction: ITokenBalanceInfo,
+    balanceBeforeTransaction: ITokenBalanceInfo<ITokenBalanceItem>,
   ): ITradeItem {
     return {
       balance: new BigNumber(operation.amount),
@@ -333,7 +344,7 @@ export class TradesBuilderV2 {
     };
   }
 
-  private getBalanceCost(balance: ITokenBalanceInfo): IStartDep {
+  private getBalanceCost(balance: ITokenBalanceInfo<ITokenBalanceItem>): IStartDep {
     return Object.values(balance).reduce(
       (accum, currentValue) => {
         accum.amountInETH = accum.amountInETH.plus(currentValue.amountInETH);
@@ -347,7 +358,7 @@ export class TradesBuilderV2 {
   private createNewTradeEvent(
     state: IOperationItem,
     operation: IOperationAmount,
-    balanceBeforeTransaction: ITokenBalanceInfo,
+    balanceBeforeTransaction: ITokenBalanceInfo<ITokenBalanceItem>,
     trade?: ITradeItem,
   ): ITradeEvent {
     const startDep = this.getBalanceCost(balanceBeforeTransaction);
@@ -363,10 +374,10 @@ export class TradesBuilderV2 {
     return {
       tradeType,
       amount: new BigNumber(operation.amount),
-      balance: tradeType === TradeType.BUY ? new BigNumber(operation.amount) : undefined,
-      averageStartDep: tradeType === TradeType.BUY ? this.calculateAverageStartDep(trade, startDep, price) : undefined,
+      balance: tradeType === TradeType.BUY ? new BigNumber(operation.amount) : new BigNumber(0),
+      averageStartDep: this.calculateAverageStartDep(trade, startDep, price, tradeType),
       tokenInfo,
-      sellOperations: tradeType === TradeType.BUY ? [] : undefined,
+      sellOperations: [],
       transactionHash: state.transactionHash,
       timeStamp: state.timeStamp,
       costUSD: new BigNumber(state.amount.raw.USD),
@@ -378,18 +389,30 @@ export class TradesBuilderV2 {
     };
   }
 
-  private calculateAverageStartDep(trade: ITradeItem, startDep: IStartDep, price: IEventTokenPrice): IAverageStartDep {
+  private calculateAverageStartDep(
+    trade: ITradeItem | undefined,
+    startDep: IStartDep,
+    price: IEventTokenPrice,
+    tradeType: TradeType,
+  ): IAverageStartDep {
+    if (tradeType === TradeType.SELL) {
+      return {
+        usd: new BigNumber(0),
+        eth: new BigNumber(0),
+      };
+    }
+
     if (!trade) {
       return {
         usd: startDep.amountInUSD,
         eth: startDep.amountInETH,
       };
-    } else {
-      return {
-        usd: this.averageStartDepUSD(trade, startDep, price),
-        eth: this.averageStartDepETH(trade, startDep, price),
-      };
     }
+
+    return {
+      usd: this.averageStartDepUSD(trade, startDep, price),
+      eth: this.averageStartDepETH(trade, startDep, price),
+    };
   }
 
   private averageStartDepETH(trade: ITradeItem, startDep: IStartDep, price: IEventTokenPrice): BigNumber {
@@ -507,7 +530,7 @@ export class TradesBuilderV2 {
     }
   }
 
-  private isErrorTransaction(data: IGroupedTransactions) {
+  private isErrorTransaction(data: IGroupedTransactions<ITokenBalanceItem>) {
     if (
       [
         ...(data.normalTransactions || []),
@@ -521,7 +544,7 @@ export class TradesBuilderV2 {
     return false;
   }
 
-  private async getTokenOperationState(currentData: IGroupedTransactions): Promise<IOperationItem> {
+  private async getTokenOperationState(currentData: IGroupedTransactions<ITokenBalanceItem>): Promise<IOperationItem> {
     try {
       let state: IOperationItem;
       const balancesDifferences = this.balanceDifferences(currentData.balance, currentData.balanceBeforeTransaction);
@@ -640,7 +663,10 @@ export class TradesBuilderV2 {
     };
   }
 
-  private balanceDifferences(currentBalance: ITokenBalanceInfo, beforeBalance: ITokenBalanceInfo): IOperationAmount[] {
+  private balanceDifferences(
+    currentBalance: ITokenBalanceInfo<ITokenBalanceItem>,
+    beforeBalance: ITokenBalanceInfo<ITokenBalanceItem>,
+  ): IOperationAmount[] {
     const tokensAddress = lodash.uniq([...Object.keys(currentBalance), ...Object.keys(beforeBalance)]);
     const diffs: IOperationAmount[] = [];
     for (const key of tokensAddress) {
@@ -661,7 +687,7 @@ export class TradesBuilderV2 {
 
   private operationPriceFromOtherSource(
     operations: IOperationAmount[],
-    balanceData: ITokenBalanceInfo,
+    balanceData: ITokenBalanceInfo<ITokenBalanceItem>,
   ): IOperationPrice {
     // Outgoing operations
     const outgoing = operations.reduce(

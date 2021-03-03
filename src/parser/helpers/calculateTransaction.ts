@@ -4,7 +4,7 @@ import {
   ITotalIndicators,
 } from '../../interfaces/parser/calculateTransaction.interface';
 import { X2POINTS, X3POINTS } from '../../constants/pointWalletAddress';
-import { IGroupedTransactions } from '../../interfaces/etherscan.interfaces';
+import { IGroupedTransactions, ITokenBalanceItem } from '../../interfaces/etherscan.interfaces';
 import { ITradeItem, TradeType } from '../../interfaces/parser/tradesBuilderV2.interface';
 
 export class CalculateTransaction {
@@ -103,7 +103,7 @@ export class CalculateTransaction {
     }, 0);
   }
 
-  public getCurrentWalletBalance(data: IGroupedTransactions): IGetCurrentWalletBalanceResult {
+  public getCurrentWalletBalance(data: IGroupedTransactions<ITokenBalanceItem>): IGetCurrentWalletBalanceResult {
     return Object.values(data.balance).reduce(
       (accum, currentValue) => {
         accum['amountInETH'] = accum['amountInETH'].plus(currentValue.amountInETH);

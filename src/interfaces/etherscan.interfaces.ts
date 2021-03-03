@@ -103,37 +103,43 @@ export interface IEtherscanParams {
   offset?: number;
 }
 
-export interface IGroupedTransactions {
+export interface IGroupedTransactionsBase {
   normalTransactions: INormalTransaction[];
   internalTransactions: IInternalTransaction[];
   erc20Transactions: IERC20Transaction[];
   erc721Transactions: IERC721Transaction[];
-  balance?: ITokenBalanceInfo;
-  balanceBeforeTransaction?: ITokenBalanceInfo;
-  blockNumber?: number;
-  previousTransactionBlockNumber?: number;
-  feeInETH?: BigNumber;
-  hash?: string;
-  timeStamp?: string;
+}
+
+export interface IGroupedTransactions<ItemType> extends IGroupedTransactionsBase {
+  balance: ITokenBalanceInfo<ItemType>;
+  balanceBeforeTransaction: ITokenBalanceInfo<ItemType>;
+  blockNumber: number;
+  previousTransactionBlockNumber: number;
+  feeInETH: BigNumber;
+  hash: string;
+  timeStamp: string;
 }
 
 export interface ITransactionsHashTable<T> {
   [key: string]: T;
 }
 
-export interface ITokenBalanceInfo {
-  [key: string]: ITokenBalanceItem;
+export interface ITokenBalanceInfo<ItemType> {
+  [key: string]: ItemType;
 }
 
-export interface ITokenBalanceItem {
+export interface ITokenBalanceItemBase {
   symbol: string;
   name: string;
   address: string;
   decimals: string;
   amount: BigNumber;
-  amountInETH?: BigNumber;
-  amountInUSD?: BigNumber;
-  usdPer1Token?: BigNumber;
-  ethPer1Token?: BigNumber;
-  usdPer1ETH?: BigNumber;
+}
+
+export interface ITokenBalanceItem extends ITokenBalanceItemBase {
+  amountInETH: BigNumber;
+  amountInUSD: BigNumber;
+  usdPer1Token: BigNumber;
+  ethPer1Token: BigNumber;
+  usdPer1ETH: BigNumber;
 }

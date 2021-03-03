@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
-import { ITokenBalanceInfo } from '../etherscan.interfaces';
+import { ITokenBalanceInfo, ITokenBalanceItemBase } from '../etherscan.interfaces'
 
 export interface IBalanceLookupResult {
   feeInETH: BigNumber;
-  balance: ITokenBalanceInfo;
+  balance: ITokenBalanceInfo<ITokenBalanceItemBase>;
   blockNumber: number;
   hash: string;
   timeStamp: string;

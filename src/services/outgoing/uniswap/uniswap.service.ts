@@ -282,7 +282,7 @@ export default class UniswapService {
 
         const result: ICheckTokenArrPriceInUSDandETHResponse = await this.clientGQ.request(PAIR_SEARCH, variables);
 
-        return tokens.reduce((accum, value, index) => {
+        return tokens.reduce<IArrTokenPriceCheckResult>((accum, value, index) => {
           const token = value.toLowerCase();
           accum[value] = this.tokenPriceSwitcher(token, result);
           return accum;
@@ -364,7 +364,7 @@ export default class UniswapService {
 
         const result: ICheckTokenArrPriceInUSDandETHResponse = await this.clientGQ.request(PAIR_SEARCH, variables);
 
-        const dataResult = argumentsData.tokens.reduce((accum, value, index) => {
+        const dataResult = argumentsData.tokens.reduce<IArrTokenPriceCheckResult>((accum, value, index) => {
           const token = value.toLowerCase();
           accum[value] = this.tokenPriceSwitcher(token, result);
           return accum;

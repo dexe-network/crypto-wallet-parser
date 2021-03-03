@@ -2,8 +2,10 @@ import {
   IERC20Transaction,
   IERC721Transaction,
   IGroupedTransactions,
+  IGroupedTransactionsBase,
   IInternalTransaction,
   INormalTransaction,
+  ITokenBalanceItemBase,
   ITransactionsHashTable,
 } from '../../interfaces/etherscan.interfaces';
 import EtherscanService from '../../services/outgoing/etherscan.service';
@@ -15,7 +17,7 @@ export class GetTransaction {
   constructor() {
     this.etherscanApi = Container.get(EtherscanService);
   }
-  public async getAllTransactionByWalletAddress(wallet: string): Promise<IGroupedTransactions[]> {
+  public async getAllTransactionByWalletAddress(wallet: string): Promise<IGroupedTransactionsBase[]> {
     const normalTransactions = await this.getNormalTransactions(wallet).then((res) =>
       this.arrayToObjectKeys<ITransactionsHashTable<INormalTransaction[]>>(res),
     );
@@ -36,8 +38,8 @@ export class GetTransaction {
       ...Object.keys(erc721Transactions),
     ]);
 
-    const arrOfHashes: IGroupedTransactions[] = hashes.reduce<IGroupedTransactions[]>((accum, value) => {
-      const data: IGroupedTransactions = {
+    const arrOfHashes: IGroupedTransactionsBase[] = hashes.reduce<IGroupedTransactionsBase[]>((accum, value) => {
+      const data: IGroupedTransactionsBase = {
         normalTransactions: normalTransactions[value],
         internalTransactions: internalTransactions[value],
         erc20Transactions: erc20Transactions[value],
@@ -45,13 +47,13 @@ export class GetTransaction {
       };
       accum.push(data);
       return accum;
-    }, [] as IGroupedTransactions[]);
+    }, []);
 
     const result = arrOfHashes.sort(this.compareFunction);
     return result;
   }
 
-  private compareFunction(a, b): number {
+  private compareFunction(a: IGroupedTransactionsBase, b: IGroupedTransactionsBase): number {
     const actualA = a.normalTransactions || a.internalTransactions || a.erc20Transactions || a.erc721Transactions;
     const actualB = b.normalTransactions || b.internalTransactions || b.erc20Transactions || b.erc721Transactions;
     if (+actualA[0].blockNumber > +actualB[0].blockNumber) {
@@ -166,7 +168,7 @@ export class GetTransaction {
   }
 
   private arrayToObjectKeys<T>(data: T[] | any): T {
-    return data.reduce((accum, value) => {
+    return data.reduce((accum: { [x: string]: any[] }, value: { hash: string | number }) => {
       if (accum[value.hash]) {
         accum[value.hash].push(value);
       } else {

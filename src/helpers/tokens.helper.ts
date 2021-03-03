@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { IAppTokenInfo } from '../interfaces/jobs/parseWallet.interface';
+import { IAppTokenInfo } from '../interfaces/parser/parseWallet.interface';
 
 export const tokenBalanceTransformer = (value: string | number, arg: IAppTokenInfo): BigNumber => {
   if (!value || !(typeof arg?.decimals === 'number')) {

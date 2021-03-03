@@ -1,11 +1,11 @@
 import {
   IERC20Transaction,
-  IERC721Transaction,
   IGroupedTransactions,
+  IGroupedTransactionsBase,
   IInternalTransaction,
   INormalTransaction,
   ITokenBalanceInfo,
-  ITokenBalanceItem,
+  ITokenBalanceItemBase,
 } from '../../interfaces/etherscan.interfaces';
 import { IBalanceLookupResult } from '../../interfaces/parser/calculateBalance.interface';
 import { ethDefaultInfo, wethDefaultInfo } from '../../constants/tokenInfo';
@@ -13,11 +13,11 @@ import BigNumber from 'bignumber.js';
 import { buildBalanceTransformer } from '../../helpers/tokens.helper';
 
 export class CalculateBalance {
-  public buildBalance(data: IGroupedTransactions[], wallet: string): IGroupedTransactions[] {
-    return data.reduce<IGroupedTransactions[]>((accumulatorValue, currentItem, index, array) => {
+  public buildBalance(data: IGroupedTransactionsBase[], wallet: string): IGroupedTransactions<ITokenBalanceItemBase>[] {
+    return data.reduce<IGroupedTransactions<ITokenBalanceItemBase>[]>((accumulatorValue, currentItem, index, array) => {
       const balanceLookupResult = this.balanceLookup(currentItem, accumulatorValue[index - 1]?.balance, wallet);
       const lookupResult = this.tokenContractAddressMigrateHandler(balanceLookupResult);
-      const result: IGroupedTransactions = {
+      const result: IGroupedTransactions<ITokenBalanceItemBase> = {
         ...currentItem,
         balance: lookupResult.balance,
         feeInETH: buildBalanceTransformer(lookupResult.feeInETH, +ethDefaultInfo.decimals),
@@ -57,7 +57,7 @@ export class CalculateBalance {
     return data;
   }
 
-  private filterTokenWIthZeroBalance(token: ITokenBalanceItem): boolean {
+  private filterTokenWIthZeroBalance(token: ITokenBalanceItemBase): boolean {
     if (token.amount.isLessThanOrEqualTo(0)) {
       return false;
     } else {
@@ -66,8 +66,8 @@ export class CalculateBalance {
   }
 
   private balanceLookup(
-    data: IGroupedTransactions,
-    previousBalance: ITokenBalanceInfo,
+    data: IGroupedTransactionsBase,
+    previousBalance: ITokenBalanceInfo<ITokenBalanceItemBase>,
     wallet: string,
   ): IBalanceLookupResult {
     const localPreviousBalance = { ...previousBalance } || {};
@@ -111,7 +111,7 @@ export class CalculateBalance {
     data: IERC20Transaction[],
     accum: IBalanceLookupResult,
     wallet: string,
-    transactionGroup: IGroupedTransactions,
+    transactionGroup: IGroupedTransactionsBase,
   ): void {
     for (const item of data) {
       accum.blockNumber = +item.blockNumber;
@@ -159,7 +159,7 @@ export class CalculateBalance {
     data: IInternalTransaction[],
     accum: IBalanceLookupResult,
     wallet: string,
-    transactionGroup: IGroupedTransactions,
+    transactionGroup: IGroupedTransactionsBase,
   ): void {
     if (!accum.balance[ethDefaultInfo.address]) {
       accum.balance[ethDefaultInfo.address] = { ...ethDefaultInfo, amount: new BigNumber(0) };
@@ -207,7 +207,7 @@ export class CalculateBalance {
     data: INormalTransaction[],
     accum: IBalanceLookupResult,
     wallet: string,
-    transactionGroup: IGroupedTransactions,
+    transactionGroup: IGroupedTransactionsBase,
   ): void {
     if (!accum.balance[ethDefaultInfo.address]) {
       accum.balance[ethDefaultInfo.address] = { ...ethDefaultInfo, amount: new BigNumber(0) };

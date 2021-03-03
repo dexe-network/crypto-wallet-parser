@@ -8,7 +8,7 @@ import { IGetCurrentWalletBalanceResult, ITotalIndicators } from '../interfaces/
 import { Logger } from 'winston';
 import LoggerInstance from '../helpers/logger';
 import { TradesBuilderV2 } from './helpers/tradesBuilderV2';
-import { IGroupedTransactions } from '../interfaces/etherscan.interfaces';
+import { IGroupedTransactions, ITokenBalanceItemBase } from '../interfaces/etherscan.interfaces';
 import { CalculateBalance } from './helpers/calculateBalance';
 import UniswapService from '../services/outgoing/uniswap/uniswap.service';
 import { ISourceInitData } from '../interfaces/parser/commonJob.interface';
@@ -17,7 +17,7 @@ export class Parser {
   private logger: Logger = LoggerInstance;
   private uniswapService: UniswapService;
 
-  public rawTransactions: IGroupedTransactions[] = [];
+  public rawTransactions: IGroupedTransactions<ITokenBalanceItemBase>[] = [];
 
   private getTransaction = new GetTransaction();
   private parseTransaction = new ParseTransaction();
