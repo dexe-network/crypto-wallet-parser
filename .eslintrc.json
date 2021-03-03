@@ -1,0 +1,11 @@
+{
+  "env": {
+    "browser": true,
+    "es6": true,
+    "jest": true
+  },
+  "extends": ["standard"],
+  "plugins": ["@typescript-eslint", "jest"],
+  "parser": "@typescript-eslint/parser",
+  "rules": { }
+}
