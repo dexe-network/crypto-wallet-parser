@@ -31,11 +31,3 @@ export interface ITransactionReceipt {
   byzantium: boolean;
   status?: number;
 }
-
-export interface IAppTokenInfo {
-  symbol: string;
-  name: string;
-  address: string;
-  decimals: string;
-  price?: string;
-}
