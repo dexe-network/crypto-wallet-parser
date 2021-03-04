@@ -1,7 +1,6 @@
-import config from '../../../../config';
 import BigNumber from 'bignumber.js';
-import UniswapService from '../../services/outgoing/uniswap/uniswap.service';
 import moment from 'moment';
+import config from '../../constants/defaultConfig';
 import {
   IGroupedTransactions,
   ITokenBalanceInfo,
@@ -28,21 +27,14 @@ import { IUniswapRawTransaction } from '../../interfaces/uniswap.interfaces';
 import { buildBalanceTransformer } from '../../helpers/tokens.helper';
 import { CalculateTransaction } from './calculateTransaction';
 import { stableCoinList } from '../../constants/stableCoins';
-import Web3Service from '../../services/helpers/web3.service';
 import { ParseTransaction } from './parseTransaction';
+import { IServices } from '../../interfaces';
 
 export class TradesBuilderV2 {
-  private uniswapService: UniswapService;
-  private calculateTransaction: CalculateTransaction;
-  private web3Service: Web3Service;
-  private parseTransactionWallet: ParseTransaction;
+  private calculateTransaction = new CalculateTransaction();
+  private parseTransactionWallet = new ParseTransaction(this.services.uniswapService);
 
-  constructor() {
-    this.uniswapService = Container.get(UniswapService);
-    this.web3Service = Container.get(Web3Service);
-    this.calculateTransaction = new CalculateTransaction();
-    this.parseTransactionWallet = new ParseTransaction();
-  }
+  constructor(private services: IServices) {}
 
   public async buildTrades(data: IGroupedTransactions<ITokenBalanceItem>[]): Promise<ITradeIterateObject> {
     const rawResult = await this.behaviourIterator(data);
@@ -65,7 +57,7 @@ export class TradesBuilderV2 {
     lastGroupedTransaction: IGroupedTransactions<ITokenBalanceItem>,
   ): Promise<IGroupedTransactions<ITokenBalanceItem>[]> {
     try {
-      const currentBlockNumber = await this.web3Service.getCurrentBlockNumberLimiter();
+      const currentBlockNumber = await this.services.web3Service.getCurrentBlockNumberLimiter();
       return await this.parseTransactionWallet.parseTransactionBalancePrice(
         this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber),
       );
@@ -554,7 +546,7 @@ export class TradesBuilderV2 {
         currentData.normalTransactions[0].to.toLowerCase() === config.uniswap.uniswapRouterAddress
       ) {
         const normalTransaction = currentData.normalTransactions[0];
-        const uniswapTransactionData = await this.uniswapService.getUniswapTransactionByIdLimiter(
+        const uniswapTransactionData = await this.services.uniswapService.getUniswapTransactionByIdLimiter(
           normalTransaction.hash,
           +normalTransaction.blockNumber,
         );

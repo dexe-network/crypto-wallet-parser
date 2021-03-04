@@ -1,7 +1,5 @@
-import { Service } from 'typedi';
 import Bottleneck from 'bottleneck';
 import Axios, { AxiosResponse } from 'axios';
-import config from '../../config';
 import {
   IERC20Transaction,
   IERC721Transaction,
@@ -12,25 +10,13 @@ import {
 } from '../../interfaces/etherscan.interfaces';
 import { toQueryString } from '../../helpers/http.helper';
 import IORedis from 'ioredis';
+import { IParserApiConfig, IParserClientConfig } from '../../interfaces';
 
-@Service()
-export default class EtherscanService {
-  limiter: Bottleneck;
-  apiKey = config.apiTokenKeys.etherscanApiKey;
-  private redis: IORedis.Redis;
+export type IEtherscanService = EtherscanServiceApi | EtherscanServiceClient;
 
-  constructor() {
-    this.redis = new IORedis(config.bottleneckRedisURL);
-    const connection = new Bottleneck.IORedisConnection({ client: this.redis });
-    this.limiter = new Bottleneck({
-      minTime: 450,
-      id: 'etherscan',
-      clearDatastore: true,
-      datastore: 'ioredis',
-      connection,
-      Redis: IORedis,
-    });
-  }
+abstract class EtherscanService {
+  protected abstract limiter: Bottleneck;
+  protected abstract config: IParserClientConfig;
 
   /// NORMAL
 
@@ -49,12 +35,12 @@ export default class EtherscanService {
   ): Promise<IEtherscanResponse<INormalTransaction[]>> {
     const baseValues = {
       address: walletAddress,
-      apikey: this.apiKey,
+      apikey: this.config.env.etherscanApiKey,
       sort: 'asc',
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<INormalTransaction[]>>(
-      `${config.apiTokenKeys.etherscanApiUrl}account&action=txlist&${queryParams}`,
+      `${this.config.env.etherscanApiUrl}account&action=txlist&${queryParams}`,
     ).then((res) => res.data);
   }
 
@@ -75,12 +61,12 @@ export default class EtherscanService {
   ): Promise<IEtherscanResponse<IInternalTransaction[]>> {
     const baseValues: IEtherscanParams = {
       address: walletAddress,
-      apikey: this.apiKey,
+      apikey: this.config.env.etherscanApiKey,
       sort: 'asc',
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<IInternalTransaction[]>>(
-      `${config.apiTokenKeys.etherscanApiUrl}account&action=txlistinternal&${queryParams}`,
+      `${this.config.env.etherscanApiUrl}account&action=txlistinternal&${queryParams}`,
     ).then((res) => res.data);
   }
 
@@ -101,12 +87,12 @@ export default class EtherscanService {
   ): Promise<IEtherscanResponse<IERC20Transaction[]>> {
     const baseValues: IEtherscanParams = {
       address: walletAddress,
-      apikey: this.apiKey,
+      apikey: this.config.env.etherscanApiKey,
       sort: 'asc',
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<IERC20Transaction[]>>(
-      `${config.apiTokenKeys.etherscanApiUrl}account&action=tokentx&${queryParams}`,
+      `${this.config.env.etherscanApiUrl}account&action=tokentx&${queryParams}`,
     ).then((res) => res.data);
   }
 
@@ -127,12 +113,42 @@ export default class EtherscanService {
   ): Promise<IEtherscanResponse<IERC721Transaction[]>> {
     const baseValues: IEtherscanParams = {
       address: walletAddress,
-      apikey: this.apiKey,
+      apikey: this.config.env.etherscanApiKey,
       sort: 'asc',
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<IERC721Transaction[]>>(
-      `${config.apiTokenKeys.etherscanApiUrl}account&action=tokennfttx&${queryParams}`,
+      `${this.config.env.etherscanApiUrl}account&action=tokennfttx&${queryParams}`,
     ).then((res) => res.data);
+  }
+}
+
+export class EtherscanServiceClient extends EtherscanService {
+  protected limiter: Bottleneck;
+
+  constructor(protected config: IParserClientConfig) {
+    super();
+    this.limiter = new Bottleneck({
+      minTime: 300,
+    });
+  }
+}
+
+export class EtherscanServiceApi extends EtherscanService {
+  private redis: IORedis.Redis;
+  protected limiter: Bottleneck;
+
+  constructor(protected config: IParserApiConfig) {
+    super();
+    this.redis = new IORedis(this.config.env.bottleneckRedisURL);
+    const connection = new Bottleneck.IORedisConnection({ client: this.redis });
+    this.limiter = new Bottleneck({
+      minTime: 450,
+      id: 'etherscan',
+      clearDatastore: true,
+      datastore: 'ioredis',
+      connection,
+      Redis: IORedis,
+    });
   }
 }

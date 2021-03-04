@@ -1,13 +1,12 @@
-import config from '../../config';
 import IORedis from 'ioredis';
 import shortHash from 'shorthash2';
+import { IParserApiConfig } from '../../interfaces';
 
-@Service()
 export class UniswapCacheService {
   private redis: IORedis.Redis;
 
-  constructor() {
-    this.redis = new IORedis(config.uniswapCacheRedisURL);
+  constructor(config: IParserApiConfig) {
+    this.redis = new IORedis(config.env.uniswapCacheRedisURL);
   }
 
   public async getData<T>(keyValue: string): Promise<T> {

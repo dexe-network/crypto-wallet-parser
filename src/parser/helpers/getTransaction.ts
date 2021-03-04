@@ -8,14 +8,13 @@ import {
   ITokenBalanceItemBase,
   ITransactionsHashTable,
 } from '../../interfaces/etherscan.interfaces';
-import EtherscanService from '../../services/outgoing/etherscan.service';
 import { uniq, sortBy } from 'lodash';
+import { IEtherscanService } from '../../services/outgoing/etherscan.service'
 
 export class GetTransaction {
-  etherscanApi: EtherscanService;
 
-  constructor() {
-    this.etherscanApi = Container.get(EtherscanService);
+  constructor(private etherscanApi: IEtherscanService) {
+
   }
   public async getAllTransactionByWalletAddress(wallet: string): Promise<IGroupedTransactionsBase[]> {
     const normalTransactions = await this.getNormalTransactions(wallet).then((res) =>

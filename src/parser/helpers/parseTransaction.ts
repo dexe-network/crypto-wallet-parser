@@ -1,17 +1,14 @@
-import UniswapService from '../../services/outgoing/uniswap/uniswap.service';
 import { Logger } from 'winston';
 import LoggerInstance from '../../helpers/logger';
 import { IGroupedTransactions, ITokenBalanceItem, ITokenBalanceItemBase } from '../../interfaces/etherscan.interfaces';
 import { buildBalanceTransformer } from '../../helpers/tokens.helper';
 import BigNumber from 'bignumber.js';
+import { UniswapServiceApi, UniswapServiceClient } from '../../services/outgoing/uniswap/uniswap.service';
 
 export class ParseTransaction {
-  private uniswapService: UniswapService;
   private logger: Logger = LoggerInstance;
 
-  constructor() {
-    this.uniswapService = Container.get(UniswapService);
-  }
+  constructor(private uniswapService: UniswapServiceApi | UniswapServiceClient) {}
 
   public async parseTransactionBalancePrice(
     transactions: IGroupedTransactions<ITokenBalanceItemBase>[],

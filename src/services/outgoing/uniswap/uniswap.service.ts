@@ -1,5 +1,3 @@
-import { Container, Service } from 'typedi';
-import config from '../../../config';
 import Bottleneck from 'bottleneck';
 import { request, GraphQLClient, gql } from 'graphql-request';
 import {
@@ -17,39 +15,13 @@ import {
   checkTokenArrPriceInUSDandETHByBlockNumber,
   checkTokenArrPriceInUSDandETHCurrent,
 } from './uniswap.gqlRequests';
+import { IParserApiConfig, IParserClientConfig } from '../../../interfaces';
+import { chunk } from 'lodash';
 
-@Service()
-export default class UniswapService {
-  private limiter: Bottleneck;
-  private clientGQ: GraphQLClient;
-  private uniswapCacheService: UniswapCacheService;
-  private redis: IORedis.Redis;
-
-  constructor() {
-    this.redis = new IORedis(config.bottleneckRedisURL);
-    const connection = new Bottleneck.IORedisConnection({ client: this.redis });
-    this.limiter = new Bottleneck({
-      minTime: 25,
-      id: 'uniswap',
-      clearDatastore: false,
-      datastore: 'ioredis',
-      connection,
-      Redis: IORedis,
-    });
-
-    this.clientGQ = new GraphQLClient(config.uniswap.uniswapGQLEndpointUrl);
-    this.uniswapCacheService = Container.get(UniswapCacheService);
-  }
-
-  // Deprecated
-  // public checkUSDTokenPriceLimiter(token: string, blockNumber: number): Promise<string> {
-  //   return this.limiter.schedule<string>(() => this.checkUSDTokenPrice(token, blockNumber));
-  // }
-
-  // Deprecated
-  // public checkCurrentTokenPriceInETHLimiter(token: string): Promise<string> {
-  //   return this.limiter.schedule<string>(() => this.checkCurrentTokenPriceInETH(token));
-  // }
+abstract class UniswapServiceBase {
+  protected abstract limiter: Bottleneck;
+  protected abstract clientGQ: GraphQLClient;
+  protected abstract config: IParserClientConfig;
 
   public checkTokenPriceInUSDandETHLimiter(token: string, blockNumber?: number): Promise<ITokenPriceUSDETH> {
     return this.limiter.schedule<ITokenPriceUSDETH>(() => this.checkTokenPriceInUSDandETH(token, blockNumber));
@@ -58,24 +30,8 @@ export default class UniswapService {
   public async checkTokenArrPriceInUSDandETHLimiter(
     argumentsData: ICheckTokenArrPriceInUSDandETHArguments,
   ): Promise<IArrTokenPriceCheckResult> {
-    if (await this.uniswapCacheService.isExist(JSON.stringify(argumentsData))) {
-      return this.uniswapCacheService.getData<IArrTokenPriceCheckResult>(JSON.stringify(argumentsData));
-    }
-
     return this.limiter.schedule<IArrTokenPriceCheckResult>(() => this.checkTokenArrPriceInUSDandETH(argumentsData));
   }
-
-  // Deprecated (not Used)
-  // public checkCurrentDateTokenArrPriceInUSDandETHLimiter(tokens: string[]): Promise<IArrTokenPriceCheckResult> {
-  //   return this.limiter.schedule<IArrTokenPriceCheckResult>(() =>
-  //     this.checkCurrentDateTokenArrPriceInUSDandETH(tokens),
-  //   );
-  // }
-
-  // Deprecated (not Used)
-  // public checkCurrentETHPriceInUSDLimiter(): Promise<string> {
-  //   return this.limiter.schedule<string>(() => this.checkCurrentETHPriceInUSD());
-  // }
 
   public getUniswapTransactionByIdLimiter(transactionId: string, blockNumber: number): Promise<IUniswapRawTransaction> {
     return this.limiter.schedule<IUniswapRawTransaction>(() =>
@@ -83,95 +39,55 @@ export default class UniswapService {
     );
   }
 
-  private async checkCurrentETHPriceInUSD(): Promise<string> {
+  protected async checkTokenArrPriceInUSDandETH(
+    argumentsData: ICheckTokenArrPriceInUSDandETHArguments,
+  ): Promise<IArrTokenPriceCheckResult> {
     try {
       const PAIR_SEARCH = gql`
-        query pairs() {
-          ethPrice: bundles() {
-            ethPrice
-          }
-        }
-      `;
-
-      const result = await this.clientGQ.request(PAIR_SEARCH);
-
-      if (result?.ethPrice[0]?.ethPrice) {
-        return result?.ethPrice[0]?.ethPrice;
-      }
-
-      return '0';
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  private async checkCurrentTokenPriceInETH(token: string): Promise<string> {
-    try {
-      const PAIR_SEARCH = gql`
-        query pairs($token: Bytes!, $tokenWETH: Bytes!) {
-          weth0: pairs(where: { token0: $token, token1: $tokenWETH, reserveUSD_gt: 10000 }) {
-            id
-            token1Price
-          }
-          weth1: pairs(where: { token1: $token, token0: $tokenWETH, reserveUSD_gt: 10000 }) {
-            id
-            token0Price
-          }
-        }
-      `;
-
-      const variables = {
-        token: token.toLowerCase(),
-        tokenWETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-      };
-
-      const result = await this.clientGQ.request(PAIR_SEARCH, variables);
-
-      if (result?.weth0[0]?.token1Price) {
-        return result?.weth0[0]?.token1Price;
-      }
-
-      if (result?.weth1[0]?.token0Price) {
-        return result?.weth1[0]?.token0Price;
-      }
-
-      return '0';
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  private async checkUSDTokenPrice(token: string, blockNumber: number): Promise<string> {
-    try {
-      const PAIR_SEARCH = gql`
-        query pairs($token: Bytes!, $tokenUSDC: Bytes!, $tokenWETH: Bytes!, $blockNumber: Int!) {
+        query pairs($tokens: [Bytes!], $tokenUSDC: Bytes!, $tokenWETH: Bytes!, $blockNumber: Int!) {
           usdc0: pairs(
-            where: { token0: $token, token1: $tokenUSDC, reserveUSD_gt: 10000 }
+            where: { token0_in: $tokens, token1: $tokenUSDC, reserveUSD_gt: 10000 }
             block: { number: $blockNumber }
           ) {
             id
             token1Price
+            token0 {
+              id
+              symbol
+            }
           }
           usdc1: pairs(
-            where: { token1: $token, token0: $tokenUSDC, reserveUSD_gt: 10000 }
+            where: { token1_in: $tokens, token0: $tokenUSDC, reserveUSD_gt: 10000 }
             block: { number: $blockNumber }
           ) {
             id
             token0Price
+            token1 {
+              id
+              symbol
+            }
           }
           weth0: pairs(
-            where: { token0: $token, token1: $tokenWETH, reserveUSD_gt: 10000 }
+            where: { token0_in: $tokens, token1: $tokenWETH, reserveUSD_gt: 10000 }
             block: { number: $blockNumber }
           ) {
             id
             token1Price
+            token0 {
+              id
+              symbol
+            }
           }
           weth1: pairs(
-            where: { token1: $token, token0: $tokenWETH, reserveUSD_gt: 10000 }
+            where: { token1_in: $tokens, token0: $tokenWETH, reserveUSD_gt: 10000 }
             block: { number: $blockNumber }
           ) {
             id
             token0Price
+            token1 {
+              id
+              symbol
+            }
           }
           ethPrice: bundles(block: { number: $blockNumber }) {
             ethPrice
@@ -179,208 +95,67 @@ export default class UniswapService {
         }
       `;
 
-      const variables = {
-        token: token.toLowerCase(),
-        tokenUSDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-        tokenWETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-        blockNumber: blockNumber,
+      const tokensArrs: string[][] = chunk(
+        argumentsData.tokens.map((item) => item.toLowerCase()),
+        5,
+      );
+      const totalResult: ICheckTokenArrPriceInUSDandETHResponse = {
+        usdc0: [],
+        usdc1: [],
+        weth0: [],
+        weth1: [],
+        ethPrice: [],
       };
 
-      // Check if Token for Check is USDC
-      if (variables.token.toLowerCase() === '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48') {
-        return '1';
+      for (const tokens of tokensArrs) {
+        let count = 0;
+        const maxTries = 10;
+        while (true) {
+          const localController = new AbortController();
+          const localClientGQ = new GraphQLClient(this.config.env.uniswapGQLEndpointUrl, {
+            signal: localController.signal,
+          });
+          const variables = {
+            tokens,
+            tokenUSDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+            tokenWETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+            // UNISWAP NO DATA BEFORE 10009000 BLOCK
+            blockNumber: argumentsData.blockNumber > 10009000 ? argumentsData.blockNumber : 10009000,
+          };
+
+          const requestTimeLimit = setTimeout(() => {
+            localController.abort();
+          }, 10000);
+
+          try {
+            const result: ICheckTokenArrPriceInUSDandETHResponse = await localClientGQ.request(PAIR_SEARCH, variables);
+            clearTimeout(requestTimeLimit);
+
+            totalResult.ethPrice.push(...result.ethPrice);
+            totalResult.usdc0.push(...result.usdc0);
+            totalResult.usdc1.push(...result.usdc1);
+            totalResult.weth0.push(...result.weth0);
+            totalResult.weth1.push(...result.weth1);
+            break;
+          } catch (e) {
+            clearTimeout(requestTimeLimit);
+            console.log('retry');
+            if (++count === maxTries) {
+              throw e;
+            }
+          }
+        }
       }
 
-      const result = await this.clientGQ.request(PAIR_SEARCH, variables);
+      const dataResult = argumentsData.tokens.reduce((accum, value, index) => {
+        const token = value.toLowerCase();
+        accum[value] = this.tokenPriceSwitcher(token, totalResult);
+        return accum;
+      }, {} as IArrTokenPriceCheckResult);
 
-      if (result?.usdc0[0]?.token1Price) {
-        return result?.usdc0[0]?.token1Price;
-      }
-
-      if (result?.usdc1[0]?.token0Price) {
-        return result?.usdc1[0]?.token0Price;
-      }
-
-      if (result?.weth0[0]?.token1Price) {
-        return new BigNumber(result?.weth0[0]?.token1Price)
-          .multipliedBy(new BigNumber(result?.ethPrice[0]?.ethPrice))
-          .toString();
-      }
-
-      if (result?.weth1[0]?.token0Price) {
-        return new BigNumber(result?.weth1[0]?.token0Price)
-          .multipliedBy(new BigNumber(result?.ethPrice[0]?.ethPrice))
-          .toString();
-      }
-
-      // console.warn('Wrong Uni token Price', variables.token, variables.blockNumber);
-
-      return '0';
+      return dataResult;
     } catch (e) {
       throw e;
-    }
-  }
-
-  private async checkCurrentDateTokenArrPriceInUSDandETH(tokens: string[]): Promise<IArrTokenPriceCheckResult> {
-    let count = 0;
-    const maxTries = 10;
-    while (true) {
-      try {
-        const PAIR_SEARCH = gql`
-          query pairs($tokens: [Bytes!], $tokenUSDC: Bytes!, $tokenWETH: Bytes!) {
-            usdc0: pairs(
-              where: { token0_in: $tokens, token1: $tokenUSDC, reserveUSD_gt: 10000 }
-            ) {
-              id
-              token1Price
-              token0 {
-                id
-                symbol
-              }
-            }
-            usdc1: pairs(
-              where: { token1_in: $tokens, token0: $tokenUSDC, reserveUSD_gt: 10000 }
-            ) {
-              id
-              token0Price
-              token1 {
-                id
-                symbol
-              }
-            }
-            weth0: pairs(
-              where: { token0_in: $tokens, token1: $tokenWETH, reserveUSD_gt: 10000 }
-            ) {
-              id
-              token1Price
-              token0 {
-                id
-                symbol
-              }
-            }
-            weth1: pairs(
-              where: { token1_in: $tokens, token0: $tokenWETH, reserveUSD_gt: 10000 }
-            ) {
-              id
-              token0Price
-              token1 {
-                id
-                symbol
-              }
-            }
-            ethPrice: bundles() {
-              ethPrice
-            }
-          }
-        `;
-
-        const variables = {
-          tokens: tokens.map((item) => item.toLowerCase()),
-          tokenUSDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-          tokenWETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-        };
-
-        const result: ICheckTokenArrPriceInUSDandETHResponse = await this.clientGQ.request(PAIR_SEARCH, variables);
-
-        return tokens.reduce<IArrTokenPriceCheckResult>((accum, value, index) => {
-          const token = value.toLowerCase();
-          accum[value] = this.tokenPriceSwitcher(token, result);
-          return accum;
-        }, {});
-        break;
-      } catch (e) {
-        console.log('retry');
-        if (++count === maxTries) throw e;
-      }
-    }
-  }
-
-  private async checkTokenArrPriceInUSDandETH(
-    argumentsData: ICheckTokenArrPriceInUSDandETHArguments,
-  ): Promise<IArrTokenPriceCheckResult> {
-    let count = 0;
-    const maxTries = 10;
-    while (true) {
-      try {
-        const PAIR_SEARCH = gql`
-          query pairs($tokens: [Bytes!], $tokenUSDC: Bytes!, $tokenWETH: Bytes!, $blockNumber: Int!) {
-            usdc0: pairs(
-              where: { token0_in: $tokens, token1: $tokenUSDC, reserveUSD_gt: 10000 }
-              block: { number: $blockNumber }
-            ) {
-              id
-              token1Price
-              token0 {
-                id
-                symbol
-              }
-            }
-            usdc1: pairs(
-              where: { token1_in: $tokens, token0: $tokenUSDC, reserveUSD_gt: 10000 }
-              block: { number: $blockNumber }
-            ) {
-              id
-              token0Price
-              token1 {
-                id
-                symbol
-              }
-            }
-            weth0: pairs(
-              where: { token0_in: $tokens, token1: $tokenWETH, reserveUSD_gt: 10000 }
-              block: { number: $blockNumber }
-            ) {
-              id
-              token1Price
-              token0 {
-                id
-                symbol
-              }
-            }
-            weth1: pairs(
-              where: { token1_in: $tokens, token0: $tokenWETH, reserveUSD_gt: 10000 }
-              block: { number: $blockNumber }
-            ) {
-              id
-              token0Price
-              token1 {
-                id
-                symbol
-              }
-            }
-            ethPrice: bundles(block: { number: $blockNumber }) {
-              ethPrice
-            }
-          }
-        `;
-
-        const variables = {
-          tokens: argumentsData.tokens.map((item) => item.toLowerCase()),
-          tokenUSDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-          tokenWETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-          // UNISWAP NO DATA BEFORE 10009000 BLOCK
-          blockNumber: argumentsData.blockNumber > 10009000 ? argumentsData.blockNumber : 10009000,
-        };
-
-        const result: ICheckTokenArrPriceInUSDandETHResponse = await this.clientGQ.request(PAIR_SEARCH, variables);
-
-        const dataResult = argumentsData.tokens.reduce<IArrTokenPriceCheckResult>((accum, value, index) => {
-          const token = value.toLowerCase();
-          accum[value] = this.tokenPriceSwitcher(token, result);
-          return accum;
-        }, {});
-
-        // Write data to cache
-        if (dataResult && !(await this.uniswapCacheService.isExist(JSON.stringify(argumentsData)))) {
-          await this.uniswapCacheService.setData<IArrTokenPriceCheckResult>(JSON.stringify(argumentsData), dataResult);
-        }
-
-        return dataResult;
-        break;
-      } catch (e) {
-        console.log('retry');
-        if (++count === maxTries) throw e;
-      }
     }
   }
 
@@ -397,7 +172,7 @@ export default class UniswapService {
           token: token.toLowerCase(),
           tokenUSDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
           tokenWETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-          blockNumber: blockNumber,
+          blockNumber,
         };
 
         // // Check if Token for Check is USDC
@@ -459,7 +234,9 @@ export default class UniswapService {
         };
       } catch (e) {
         console.log('retry');
-        if (++count === maxTries) throw e;
+        if (++count === maxTries) {
+          throw e;
+        }
       }
     }
   }
@@ -525,11 +302,9 @@ export default class UniswapService {
         if (!res.swaps[0]) {
           return undefined;
         }
-        res.swaps[0]['amountETH'] = new BigNumber(res.swaps[0].amountUSD)
-          .dividedBy(res?.ethPrice[0]?.ethPrice)
-          .toString();
+        res.swaps[0].amountETH = new BigNumber(res.swaps[0].amountUSD).dividedBy(res?.ethPrice[0]?.ethPrice).toString();
 
-        res.swaps[0]['ethPrice'] = res.ethPrice[0].ethPrice;
+        res.swaps[0].ethPrice = res.ethPrice[0].ethPrice;
         return res.swaps[0];
       });
     } catch (e) {
@@ -590,5 +365,66 @@ export default class UniswapService {
       ethPer1Token: new BigNumber(0),
       usdPer1ETH: new BigNumber(ethPrice),
     };
+  }
+}
+
+export class UniswapServiceClient extends UniswapServiceBase {
+  protected limiter: Bottleneck;
+  protected clientGQ: GraphQLClient;
+  constructor(protected config: IParserClientConfig) {
+    super();
+
+    this.limiter = new Bottleneck({
+      minTime: 25,
+      maxConcurrent: 25,
+    });
+
+    this.clientGQ = new GraphQLClient(this.config.env.uniswapGQLEndpointUrl);
+  }
+}
+
+export class UniswapServiceApi extends UniswapServiceBase {
+  protected limiter: Bottleneck;
+  protected clientGQ: GraphQLClient;
+  protected uniswapCacheService: UniswapCacheService;
+  protected redis: IORedis.Redis;
+
+  constructor(protected config: IParserApiConfig) {
+    super();
+
+    this.redis = new IORedis(this.config.env.bottleneckRedisURL);
+    const connection = new Bottleneck.IORedisConnection({ client: this.redis });
+    this.limiter = new Bottleneck({
+      minTime: 25,
+      id: 'uniswap',
+      clearDatastore: false,
+      datastore: 'ioredis',
+      connection,
+      Redis: IORedis,
+    });
+
+    this.clientGQ = new GraphQLClient(this.config.env.uniswapGQLEndpointUrl);
+    this.uniswapCacheService = new UniswapCacheService(this.config);
+  }
+
+  public async checkTokenArrPriceInUSDandETHLimiter(
+    argumentsData: ICheckTokenArrPriceInUSDandETHArguments,
+  ): Promise<IArrTokenPriceCheckResult> {
+    if (await this.uniswapCacheService.isExist(JSON.stringify(argumentsData))) {
+      return this.uniswapCacheService.getData<IArrTokenPriceCheckResult>(JSON.stringify(argumentsData));
+    }
+
+    return super.checkTokenArrPriceInUSDandETHLimiter(argumentsData);
+  }
+
+  protected async checkTokenArrPriceInUSDandETH(
+    argumentsData: ICheckTokenArrPriceInUSDandETHArguments,
+  ): Promise<IArrTokenPriceCheckResult> {
+    const dataResult = await super.checkTokenArrPriceInUSDandETH(argumentsData);
+    // Write data to cache
+    if (dataResult && !(await this.uniswapCacheService.isExist(JSON.stringify(argumentsData)))) {
+      await this.uniswapCacheService.setData<IArrTokenPriceCheckResult>(JSON.stringify(argumentsData), dataResult);
+    }
+    return dataResult;
   }
 }

@@ -1,22 +1,18 @@
-import { Service } from 'typedi';
 import Web3 from 'web3';
-import config from '../../config';
 import Bottleneck from 'bottleneck';
 import { ITransactionReceipt } from '../../interfaces/parser/parseWallet.interface';
+import { IParserClientConfig } from '../../interfaces';
 
-@Service()
 export default class Web3Service {
   web3js: Web3;
   limiter: Bottleneck;
 
-  constructor() {
+  constructor(config: IParserClientConfig) {
     this.limiter = new Bottleneck({
       minTime: 25,
     });
 
-    this.web3js = new Web3(
-      new Web3.providers.HttpProvider(`${config.apiTokenKeys.infuraUrl}/${config.apiTokenKeys.infuraProjectId}`),
-    );
+    this.web3js = new Web3(new Web3.providers.HttpProvider(`${config.env.infuraUrl}/${config.env.infuraProjectId}`));
   }
 
   private getTransactionReceipt(transactionHash: string): Promise<ITransactionReceipt> {
