@@ -17,6 +17,7 @@ import {
 } from './uniswap.gqlRequests';
 import { IParserApiConfig, IParserClientConfig } from '../../../interfaces';
 import { chunk } from 'lodash';
+import defaultConfig from '../../../constants/defaultConfig';
 
 abstract class UniswapServiceBase {
   protected abstract limiter: Bottleneck;
@@ -112,7 +113,7 @@ abstract class UniswapServiceBase {
         const maxTries = 10;
         while (true) {
           const localController = new AbortController();
-          const localClientGQ = new GraphQLClient(this.config.env.uniswapGQLEndpointUrl, {
+          const localClientGQ = new GraphQLClient(defaultConfig.uniswap.uniswapGQLEndpointUrl, {
             signal: localController.signal,
           });
           const variables = {
@@ -379,7 +380,7 @@ export class UniswapServiceClient extends UniswapServiceBase {
       maxConcurrent: 25,
     });
 
-    this.clientGQ = new GraphQLClient(this.config.env.uniswapGQLEndpointUrl);
+    this.clientGQ = new GraphQLClient(defaultConfig.uniswap.uniswapGQLEndpointUrl);
   }
 }
 
@@ -403,7 +404,7 @@ export class UniswapServiceApi extends UniswapServiceBase {
       Redis: IORedis,
     });
 
-    this.clientGQ = new GraphQLClient(this.config.env.uniswapGQLEndpointUrl);
+    this.clientGQ = new GraphQLClient(defaultConfig.uniswap.uniswapGQLEndpointUrl);
     this.uniswapCacheService = new UniswapCacheService(this.config);
   }
 

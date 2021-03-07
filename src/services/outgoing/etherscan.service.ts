@@ -11,6 +11,7 @@ import {
 import { toQueryString } from '../../helpers/http.helper';
 import IORedis from 'ioredis';
 import { IParserApiConfig, IParserClientConfig } from '../../interfaces';
+import defaultConfig from '../../constants/defaultConfig'
 
 export type IEtherscanService = EtherscanServiceApi | EtherscanServiceClient;
 
@@ -40,7 +41,7 @@ abstract class EtherscanService {
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<INormalTransaction[]>>(
-      `${this.config.env.etherscanApiUrl}account&action=txlist&${queryParams}`,
+      `${defaultConfig.etherscanApiUrl}account&action=txlist&${queryParams}`,
     ).then((res) => res.data);
   }
 
@@ -66,7 +67,7 @@ abstract class EtherscanService {
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<IInternalTransaction[]>>(
-      `${this.config.env.etherscanApiUrl}account&action=txlistinternal&${queryParams}`,
+      `${defaultConfig.etherscanApiUrl}account&action=txlistinternal&${queryParams}`,
     ).then((res) => res.data);
   }
 
@@ -92,7 +93,7 @@ abstract class EtherscanService {
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<IERC20Transaction[]>>(
-      `${this.config.env.etherscanApiUrl}account&action=tokentx&${queryParams}`,
+      `${defaultConfig.etherscanApiUrl}account&action=tokentx&${queryParams}`,
     ).then((res) => res.data);
   }
 
@@ -118,7 +119,7 @@ abstract class EtherscanService {
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<IERC721Transaction[]>>(
-      `${this.config.env.etherscanApiUrl}account&action=tokennfttx&${queryParams}`,
+      `${defaultConfig.etherscanApiUrl}account&action=tokennfttx&${queryParams}`,
     ).then((res) => res.data);
   }
 }

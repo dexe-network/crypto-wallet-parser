@@ -5,11 +5,8 @@ import { EtherscanServiceApi, EtherscanServiceClient } from '../services/outgoin
 export interface IParserClientConfig {
   correctWallet: string;
   env: {
-    infuraUrl: string;
     infuraProjectId: string;
-    uniswapGQLEndpointUrl: string;
     etherscanApiKey: string;
-    etherscanApiUrl: string;
   };
 }
 export interface IParserApiConfig {
@@ -17,13 +14,10 @@ export interface IParserApiConfig {
   lastCheckBlockNumber: number;
   startCheckBlockNumber: number;
   env: {
-    infuraUrl: string;
     infuraProjectId: string;
     bottleneckRedisURL: string;
-    uniswapGQLEndpointUrl: string;
     uniswapCacheRedisURL: string;
     etherscanApiKey: string;
-    etherscanApiUrl: string;
   };
 }
 

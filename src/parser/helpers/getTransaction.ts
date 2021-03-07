@@ -63,10 +63,12 @@ export class GetTransaction {
       return -1;
     }
 
+    // @ts-ignore
     if ((+actualA[0].transactionIndex || 0) > (+actualB[0].transactionIndex || 0)) {
       return 1;
     }
 
+    // @ts-ignore
     if ((+actualA[0].transactionIndex || 0) < (+actualB[0].transactionIndex || 0)) {
       return -1;
     }
