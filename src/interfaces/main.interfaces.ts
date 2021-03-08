@@ -1,6 +1,8 @@
 import Web3Service from '../services/helpers/web3.service';
-import { UniswapServiceApi, UniswapServiceClient } from '../services/outgoing/uniswap/uniswap.service';
-import { EtherscanServiceApi, EtherscanServiceClient } from '../services/outgoing/etherscan.service';
+import { UniswapServiceClient } from '../services/outgoing/uniswap/uniswap.browser.service';
+import { UniswapServiceApi } from '../services/outgoing/uniswap/uniswap.main.service';
+import { EtherscanServiceClient } from '../services/outgoing/etherscan/etherscan.service.browser'
+import { EtherscanServiceApi } from '../services/outgoing/etherscan/etherscan.service.main'
 
 export interface IParserClientConfig {
   correctWallet: string;

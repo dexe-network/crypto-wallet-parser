@@ -1,12 +1,10 @@
-import { Logger } from 'winston';
-import LoggerInstance from '../../helpers/logger';
 import { IGroupedTransactions, ITokenBalanceItem, ITokenBalanceItemBase } from '../../interfaces/etherscan.interfaces';
 import { buildBalanceTransformer } from '../../helpers/tokens.helper';
 import BigNumber from 'bignumber.js';
-import { UniswapServiceApi, UniswapServiceClient } from '../../services/outgoing/uniswap/uniswap.service';
+import { UniswapServiceApi } from '../../services/outgoing/uniswap/uniswap.main.service';
+import { UniswapServiceClient } from '../../services/outgoing/uniswap/uniswap.browser.service';
 
 export class ParseTransaction {
-  private logger: Logger = LoggerInstance;
 
   constructor(private uniswapService: UniswapServiceApi | UniswapServiceClient) {}
 

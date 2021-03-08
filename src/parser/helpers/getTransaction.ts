@@ -9,13 +9,11 @@ import {
   ITransactionsHashTable,
 } from '../../interfaces/etherscan.interfaces';
 import { uniq, sortBy } from 'lodash';
-import { IEtherscanService } from '../../services/outgoing/etherscan.service'
+import { EtherscanServiceClient } from '../../services/outgoing/etherscan/etherscan.service.browser';
+import { EtherscanServiceApi } from '../../services/outgoing/etherscan/etherscan.service.main';
 
 export class GetTransaction {
-
-  constructor(private etherscanApi: IEtherscanService) {
-
-  }
+  constructor(private etherscanApi: EtherscanServiceClient | EtherscanServiceApi) {}
   public async getAllTransactionByWalletAddress(wallet: string): Promise<IGroupedTransactionsBase[]> {
     const normalTransactions = await this.getNormalTransactions(wallet).then((res) =>
       this.arrayToObjectKeys<ITransactionsHashTable<INormalTransaction[]>>(res),

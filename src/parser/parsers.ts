@@ -1,15 +1,9 @@
-import { Logger } from 'winston';
-import LoggerInstance from '../helpers/logger';
 import {
   IDataProviderResult,
   IGetCurrentWalletBalanceResult,
   IGroupedTransactions,
-  IParserApiConfig,
   IParserClientConfig,
   IServices,
-  IServicesApi,
-  IServicesClient,
-  ISourceInitData,
   ITokenBalanceItemBase,
   ITotalIndicators,
 } from '../interfaces';
@@ -20,14 +14,9 @@ import { TransformTransaction } from './helpers/transformTransaction';
 import { TradesBuilderV2 } from './helpers/tradesBuilderV2';
 import { CalculateBalance } from './helpers/calculateBalance';
 import { CalculateTransaction } from './helpers/calculateTransaction';
-import Web3Service from '../services/helpers/web3.service';
-import { UniswapServiceApi, UniswapServiceClient } from '../services/outgoing/uniswap/uniswap.service';
-import { EtherscanServiceApi, EtherscanServiceClient } from '../services/outgoing/etherscan.service';
 
-abstract class ParserBase<ConfigType> {
+export abstract class ParserBase<ConfigType> {
   abstract config: IParserClientConfig;
-
-  protected logger: Logger = LoggerInstance;
 
   public rawTransactions: IGroupedTransactions<ITokenBalanceItemBase>[] = [];
 
@@ -47,7 +36,7 @@ abstract class ParserBase<ConfigType> {
       const initStep2 = this.calculateBalance.buildBalance(initStep1, this.config.correctWallet);
       this.rawTransactions = initStep2;
     } catch (e) {
-      this.logger.error('🔥 error: %o', e);
+      console.log('🔥 error: %o', e);
       throw e;
     }
   }
@@ -89,42 +78,8 @@ abstract class ParserBase<ConfigType> {
         trades: transactionStep3,
       };
     } catch (e) {
-      this.logger.error('🔥 error: %o', e);
+      console.log('🔥 error: %o', e);
       throw e;
     }
-  }
-}
-
-export class ParserClient extends ParserBase<IParserClientConfig> {
-  constructor(public config: IParserClientConfig) {
-    super({
-      web3Service: new Web3Service(config),
-      uniswapService: new UniswapServiceClient(config),
-      etherscanService: new EtherscanServiceClient(config),
-    } as IServicesClient);
-  }
-}
-
-export class ParserApi extends ParserBase<IParserApiConfig> {
-  constructor(public config: IParserApiConfig) {
-    super({
-      web3Service: new Web3Service(config),
-      uniswapService: new UniswapServiceApi(config),
-      etherscanService: new EtherscanServiceApi(config),
-    } as IServicesApi);
-  }
-
-  public async init(): Promise<void> {
-    await super.init();
-    const initStep3 = this.filterTransaction.filterAfterRegistration(
-      this.rawTransactions,
-      this.config.startCheckBlockNumber,
-    );
-    this.rawTransactions = initStep3;
-  }
-
-  public hasNewTransactions(): boolean {
-    const data = this.filterTransaction.filterAfterRegistration(this.rawTransactions, this.config.lastCheckBlockNumber);
-    return data.length > 0;
   }
 }

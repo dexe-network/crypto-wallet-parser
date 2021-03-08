@@ -5,6 +5,7 @@
   "keywords": [],
   "main": "dist/dexe-crypto-wallet-parser.umd.js",
   "module": "dist/dexe-crypto-wallet-parser.es5.js",
+  "browser": "dist/dexe-crypto-wallet-parser-browser.umd.js",
   "typings": "dist/types/dexe-crypto-wallet-parser.d.ts",
   "files": [
     "dist"
@@ -142,8 +143,8 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "qs": "^6.9.6",
+    "rollup-plugin-polyfill-node": "^0.6.1",
     "shorthash2": "^1.0.3",
-    "web3": "^1.3.4",
-    "winston": "^3.3.3"
+    "web3": "^1.3.4"
   }
 }

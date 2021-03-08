@@ -2,4 +2,4 @@
 // import "core-js/fn/array.find"
 
 export * from './interfaces';
-export * from './parser/parsers';
+export * from './parser/parser.browser';

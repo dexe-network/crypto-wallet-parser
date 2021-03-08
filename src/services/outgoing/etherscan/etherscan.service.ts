@@ -1,5 +1,5 @@
 import Bottleneck from 'bottleneck';
-import Axios, { AxiosResponse } from 'axios';
+import Axios from 'axios';
 import {
   IERC20Transaction,
   IERC721Transaction,
@@ -7,15 +7,12 @@ import {
   IEtherscanResponse,
   IInternalTransaction,
   INormalTransaction,
-} from '../../interfaces/etherscan.interfaces';
-import { toQueryString } from '../../helpers/http.helper';
-import IORedis from 'ioredis';
-import { IParserApiConfig, IParserClientConfig } from '../../interfaces';
-import defaultConfig from '../../constants/defaultConfig'
+} from '../../../interfaces/etherscan.interfaces';
+import { toQueryString } from '../../../helpers/http.helper';
+import { IParserClientConfig } from '../../../interfaces';
+import defaultConfig from '../../../constants/defaultConfig';
 
-export type IEtherscanService = EtherscanServiceApi | EtherscanServiceClient;
-
-abstract class EtherscanService {
+export abstract class EtherscanService {
   protected abstract limiter: Bottleneck;
   protected abstract config: IParserClientConfig;
 
@@ -121,35 +118,5 @@ abstract class EtherscanService {
     return Axios.get<IEtherscanResponse<IERC721Transaction[]>>(
       `${defaultConfig.etherscanApiUrl}account&action=tokennfttx&${queryParams}`,
     ).then((res) => res.data);
-  }
-}
-
-export class EtherscanServiceClient extends EtherscanService {
-  protected limiter: Bottleneck;
-
-  constructor(protected config: IParserClientConfig) {
-    super();
-    this.limiter = new Bottleneck({
-      minTime: 300,
-    });
-  }
-}
-
-export class EtherscanServiceApi extends EtherscanService {
-  private redis: IORedis.Redis;
-  protected limiter: Bottleneck;
-
-  constructor(protected config: IParserApiConfig) {
-    super();
-    this.redis = new IORedis(this.config.env.bottleneckRedisURL);
-    const connection = new Bottleneck.IORedisConnection({ client: this.redis });
-    this.limiter = new Bottleneck({
-      minTime: 450,
-      id: 'etherscan',
-      clearDatastore: true,
-      datastore: 'ioredis',
-      connection,
-      Redis: IORedis,
-    });
   }
 }

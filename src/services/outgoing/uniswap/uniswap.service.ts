@@ -1,5 +1,5 @@
 import Bottleneck from 'bottleneck';
-import { request, GraphQLClient, gql } from 'graphql-request';
+import { GraphQLClient, gql } from 'graphql-request';
 import {
   IArrTokenPriceCheckResult,
   ICheckTokenArrPriceInUSDandETHArguments,
@@ -9,17 +9,15 @@ import {
 } from '../../../interfaces/uniswap.interfaces';
 import BigNumber from 'bignumber.js';
 import { ethDefaultInfo, wethDefaultInfo } from '../../../constants/tokenInfo';
-import { UniswapCacheService } from '../../helpers/uniswapCache.service';
-import IORedis from 'ioredis';
 import {
   checkTokenArrPriceInUSDandETHByBlockNumber,
   checkTokenArrPriceInUSDandETHCurrent,
 } from './uniswap.gqlRequests';
-import { IParserApiConfig, IParserClientConfig } from '../../../interfaces';
+import { IParserClientConfig } from '../../../interfaces';
 import { chunk } from 'lodash';
 import defaultConfig from '../../../constants/defaultConfig';
 
-abstract class UniswapServiceBase {
+export abstract class UniswapServiceBase {
   protected abstract limiter: Bottleneck;
   protected abstract clientGQ: GraphQLClient;
   protected abstract config: IParserClientConfig;
@@ -366,66 +364,5 @@ abstract class UniswapServiceBase {
       ethPer1Token: new BigNumber(0),
       usdPer1ETH: new BigNumber(ethPrice),
     };
-  }
-}
-
-export class UniswapServiceClient extends UniswapServiceBase {
-  protected limiter: Bottleneck;
-  protected clientGQ: GraphQLClient;
-  constructor(protected config: IParserClientConfig) {
-    super();
-
-    this.limiter = new Bottleneck({
-      minTime: 25,
-      maxConcurrent: 25,
-    });
-
-    this.clientGQ = new GraphQLClient(defaultConfig.uniswap.uniswapGQLEndpointUrl);
-  }
-}
-
-export class UniswapServiceApi extends UniswapServiceBase {
-  protected limiter: Bottleneck;
-  protected clientGQ: GraphQLClient;
-  protected uniswapCacheService: UniswapCacheService;
-  protected redis: IORedis.Redis;
-
-  constructor(protected config: IParserApiConfig) {
-    super();
-
-    this.redis = new IORedis(this.config.env.bottleneckRedisURL);
-    const connection = new Bottleneck.IORedisConnection({ client: this.redis });
-    this.limiter = new Bottleneck({
-      minTime: 25,
-      id: 'uniswap',
-      clearDatastore: false,
-      datastore: 'ioredis',
-      connection,
-      Redis: IORedis,
-    });
-
-    this.clientGQ = new GraphQLClient(defaultConfig.uniswap.uniswapGQLEndpointUrl);
-    this.uniswapCacheService = new UniswapCacheService(this.config);
-  }
-
-  public async checkTokenArrPriceInUSDandETHLimiter(
-    argumentsData: ICheckTokenArrPriceInUSDandETHArguments,
-  ): Promise<IArrTokenPriceCheckResult> {
-    if (await this.uniswapCacheService.isExist(JSON.stringify(argumentsData))) {
-      return this.uniswapCacheService.getData<IArrTokenPriceCheckResult>(JSON.stringify(argumentsData));
-    }
-
-    return super.checkTokenArrPriceInUSDandETHLimiter(argumentsData);
-  }
-
-  protected async checkTokenArrPriceInUSDandETH(
-    argumentsData: ICheckTokenArrPriceInUSDandETHArguments,
-  ): Promise<IArrTokenPriceCheckResult> {
-    const dataResult = await super.checkTokenArrPriceInUSDandETH(argumentsData);
-    // Write data to cache
-    if (dataResult && !(await this.uniswapCacheService.isExist(JSON.stringify(argumentsData)))) {
-      await this.uniswapCacheService.setData<IArrTokenPriceCheckResult>(JSON.stringify(argumentsData), dataResult);
-    }
-    return dataResult;
   }
 }
