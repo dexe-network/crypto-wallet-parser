@@ -6,11 +6,14 @@ import { EtherscanServiceApi } from '../services/outgoing/etherscan/etherscan.se
 
 export class ParserApi extends ParserBase<IParserApiConfig> {
   constructor(public config: IParserApiConfig) {
-    super({
-      web3Service: new Web3Service(config),
-      uniswapService: new UniswapServiceApi(config),
-      etherscanService: new EtherscanServiceApi(config),
-    } as IServicesApi);
+    super(
+      {
+        web3Service: new Web3Service(config),
+        uniswapService: new UniswapServiceApi(config),
+        etherscanService: new EtherscanServiceApi(config),
+      } as IServicesApi,
+      config,
+    );
   }
 
   public async init(): Promise<void> {

@@ -6,10 +6,13 @@ import { EtherscanServiceClient } from '../services/outgoing/etherscan/etherscan
 
 export class ParserClient extends ParserBase<IParserClientConfig> {
   constructor(public config: IParserClientConfig) {
-    super({
-      web3Service: new Web3Service(config),
-      uniswapService: new UniswapServiceClient(config),
-      etherscanService: new EtherscanServiceClient(config),
-    } as IServicesClient);
+    super(
+      {
+        web3Service: new Web3Service(config),
+        uniswapService: new UniswapServiceClient(config),
+        etherscanService: new EtherscanServiceClient(config),
+      } as IServicesClient,
+      config,
+    );
   }
 }

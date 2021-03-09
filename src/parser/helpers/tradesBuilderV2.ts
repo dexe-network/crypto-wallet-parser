@@ -28,13 +28,17 @@ import { buildBalanceTransformer } from '../../helpers/tokens.helper';
 import { CalculateTransaction } from './calculateTransaction';
 import { stableCoinList } from '../../constants/stableCoins';
 import { ParseTransaction } from './parseTransaction';
-import { IServices } from '../../interfaces';
+import { IParserClientConfig, IServices } from '../../interfaces';
+import { generateBehaviourConfig, ITradesBuilderV2BehaviourConfig } from '../configs/tradesBuilderV2.configs';
 
 export class TradesBuilderV2 {
   private calculateTransaction = new CalculateTransaction();
   private parseTransactionWallet = new ParseTransaction(this.services.uniswapService);
+  private behaviourConfig: ITradesBuilderV2BehaviourConfig;
 
-  constructor(private services: IServices) {}
+  constructor(private services: IServices, private config: IParserClientConfig) {
+    this.behaviourConfig = generateBehaviourConfig(config);
+  }
 
   public async buildTrades(data: IGroupedTransactions<ITokenBalanceItem>[]): Promise<ITradeIterateObject> {
     const rawResult = await this.behaviourIterator(data);
@@ -573,7 +577,7 @@ export class TradesBuilderV2 {
                 USD: operationPriceIncludeFee.amountInUSD,
               },
             },
-            isTrustedProvider: true,
+            isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.first,
             timeStamp: normalTransaction.timeStamp,
             transactionHash: normalTransaction.hash,
             transactionFeeETH,
@@ -601,7 +605,7 @@ export class TradesBuilderV2 {
                 USD: operationPriceIncludeFee.amountInUSD,
               },
             },
-            isTrustedProvider: false,
+            isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.second,
             timeStamp: normalTransaction.timeStamp,
             transactionHash: normalTransaction.hash,
             transactionFeeETH,
@@ -629,7 +633,7 @@ export class TradesBuilderV2 {
               USD: operationPriceIncludeFee.amountInUSD,
             },
           },
-          isTrustedProvider: false,
+          isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.third,
           timeStamp: currentData.timeStamp,
           transactionHash: currentData.hash,
           transactionFeeETH,

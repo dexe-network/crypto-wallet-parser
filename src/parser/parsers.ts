@@ -16,19 +16,17 @@ import { CalculateBalance } from './helpers/calculateBalance';
 import { CalculateTransaction } from './helpers/calculateTransaction';
 
 export abstract class ParserBase<ConfigType> {
-  abstract config: IParserClientConfig;
-
   public rawTransactions: IGroupedTransactions<ITokenBalanceItemBase>[] = [];
 
   protected getTransaction = new GetTransaction(this.services.etherscanService);
   protected parseTransaction = new ParseTransaction(this.services.uniswapService);
   protected filterTransaction = new FilterTransaction();
   protected transformTransaction = new TransformTransaction();
-  protected tradesBuilderV2 = new TradesBuilderV2(this.services);
+  protected tradesBuilderV2 = new TradesBuilderV2(this.services, this.config);
   protected calculateBalance = new CalculateBalance();
   protected calculateTransaction = new CalculateTransaction();
 
-  constructor(protected services: IServices) {}
+  constructor(protected services: IServices, protected config: IParserClientConfig) {}
 
   public async init(): Promise<void> {
     try {
