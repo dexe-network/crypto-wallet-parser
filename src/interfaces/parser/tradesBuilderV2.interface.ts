@@ -12,11 +12,22 @@ export interface IOperationItem {
       USD: BigNumber;
     };
   };
+  operationInfo: IOperationTokens;
   transactionFeeETH: BigNumber;
   transactionFeeUSD: BigNumber;
   timeStamp: string;
   transactionHash: string;
   isTrustedProvider: boolean;
+}
+
+export interface IOperationTokens {
+  sent: IOperationAmount[];
+  received: IOperationAmount[];
+}
+
+export interface balanceDifferencesResult {
+  differences: IOperationAmount[];
+  operationInfo: IOperationTokens;
 }
 
 export interface IOperationAmount {
@@ -83,6 +94,7 @@ export interface ITradeEvent {
   balance: BigNumber;
   sellOperations: ISellOperations[];
   averageStartDep: IAverageStartDep;
+  operationInfo: IOperationTokens;
 }
 
 export interface ISellOperations {

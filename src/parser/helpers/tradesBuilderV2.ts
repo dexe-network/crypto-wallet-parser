@@ -9,12 +9,14 @@ import {
 } from '../../interfaces/etherscan.interfaces';
 import lodash from 'lodash';
 import {
+  balanceDifferencesResult,
   IAppTokenInfo,
   IAverageStartDep,
   IEventTokenPrice,
   IOperationAmount,
   IOperationItem,
   IOperationPrice,
+  IOperationTokens,
   IStartDep,
   ITradeEvent,
   ITradeItem,
@@ -24,12 +26,13 @@ import {
   TradeType,
 } from '../../interfaces/parser/tradesBuilderV2.interface';
 import { IUniswapRawTransaction } from '../../interfaces/uniswap.interfaces';
-import { buildBalanceTransformer } from '../../helpers/tokens.helper';
+import { buildBalanceTransformer, parsedBalanceToRaw } from '../../helpers/tokens.helper';
 import { CalculateTransaction } from './calculateTransaction';
 import { stableCoinList } from '../../constants/stableCoins';
 import { ParseTransaction } from './parseTransaction';
 import { IParserClientConfig, IServices } from '../../interfaces';
 import { generateBehaviourConfig, ITradesBuilderV2BehaviourConfig } from '../configs/tradesBuilderV2.configs';
+import { ethDefaultInfo } from '../../constants/tokenInfo';
 
 export class TradesBuilderV2 {
   private calculateTransaction = new CalculateTransaction();
@@ -382,6 +385,7 @@ export class TradesBuilderV2 {
       transactionFeeUSD: state.transactionFeeUSD,
       price,
       startDep,
+      operationInfo: state.operationInfo,
     };
   }
 
@@ -543,7 +547,11 @@ export class TradesBuilderV2 {
   private async getTokenOperationState(currentData: IGroupedTransactions<ITokenBalanceItem>): Promise<IOperationItem> {
     try {
       let state: IOperationItem;
-      const balancesDifferences = this.balanceDifferences(currentData.balance, currentData.balanceBeforeTransaction);
+      const balancesDifferencesData = this.balanceDifferences(
+        currentData.balance,
+        currentData.balanceBeforeTransaction,
+        currentData.feeInETH,
+      );
 
       if (
         currentData.normalTransactions &&
@@ -566,7 +574,8 @@ export class TradesBuilderV2 {
             transactionFeeUSD,
           );
           state = {
-            operations: balancesDifferences,
+            operations: balancesDifferencesData.differences,
+            operationInfo: balancesDifferencesData.operationInfo,
             amount: {
               raw: {
                 ETH: operationPriceUniRaw.amountInETH,
@@ -585,7 +594,10 @@ export class TradesBuilderV2 {
           };
         } else {
           // Catch add or remove from liquidity Uniswap
-          const operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferences, currentData.balance);
+          const operationPriceOtherRaw = this.operationPriceFromOtherSource(
+            balancesDifferencesData.differences,
+            currentData.balance,
+          );
           const transactionFeeETH = currentData.feeInETH;
           const transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
           const operationPriceIncludeFee = this.operationPriceWithFee(
@@ -594,7 +606,8 @@ export class TradesBuilderV2 {
             transactionFeeUSD,
           );
           state = {
-            operations: balancesDifferences,
+            operations: balancesDifferencesData.differences,
+            operationInfo: balancesDifferencesData.operationInfo,
             amount: {
               raw: {
                 ETH: operationPriceOtherRaw.amountInETH,
@@ -613,7 +626,10 @@ export class TradesBuilderV2 {
           };
         }
       } else {
-        const operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferences, currentData.balance);
+        const operationPriceOtherRaw = this.operationPriceFromOtherSource(
+          balancesDifferencesData.differences,
+          currentData.balance,
+        );
         const transactionFeeETH = currentData.feeInETH;
         const transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
         const operationPriceIncludeFee = this.operationPriceWithFee(
@@ -622,7 +638,8 @@ export class TradesBuilderV2 {
           transactionFeeUSD,
         );
         state = {
-          operations: balancesDifferences,
+          operations: balancesDifferencesData.differences,
+          operationInfo: balancesDifferencesData.operationInfo,
           amount: {
             raw: {
               ETH: operationPriceOtherRaw.amountInETH,
@@ -662,12 +679,17 @@ export class TradesBuilderV2 {
   private balanceDifferences(
     currentBalance: ITokenBalanceInfo<ITokenBalanceItem>,
     beforeBalance: ITokenBalanceInfo<ITokenBalanceItem>,
-  ): IOperationAmount[] {
+    parsedFeeInETH: BigNumber,
+  ): balanceDifferencesResult {
     const tokensAddress = lodash.uniq([...Object.keys(currentBalance), ...Object.keys(beforeBalance)]);
     const diffs: IOperationAmount[] = [];
+    const operationInfo: IOperationTokens = {
+      sent: [],
+      received: [],
+    };
     for (const key of tokensAddress) {
       if (!(currentBalance[key].amount.toString() === beforeBalance[key]?.amount?.toString())) {
-        diffs.push({
+        const item = {
           symbol: currentBalance[key].symbol,
           name: currentBalance[key].name,
           address: currentBalance[key].address.toLowerCase(),
@@ -675,10 +697,32 @@ export class TradesBuilderV2 {
           amount: beforeBalance[key]?.amount
             ? currentBalance[key].amount.minus(beforeBalance[key].amount)
             : new BigNumber(currentBalance[key].amount.toString()),
-        });
+        };
+
+        // Exclude Fee From Balance Differences
+        if (item.address === ethDefaultInfo.address) {
+          if (item.amount.isLessThan(0)) {
+            item.amount = item.amount.plus(parsedBalanceToRaw(parsedFeeInETH, +ethDefaultInfo.decimals));
+          }
+
+          if (item.amount.isGreaterThan(0)) {
+            item.amount = item.amount.minus(parsedBalanceToRaw(parsedFeeInETH, +ethDefaultInfo.decimals));
+          }
+        }
+
+        // set operationInfo
+        if (item.amount.isLessThan(0) || item.amount.isGreaterThan(0)) {
+          operationInfo.sent.push(item);
+        }
+
+        diffs.push(item);
       }
     }
-    return diffs.filter((x) => !stableCoinList.some((y) => y.address === x.address.toLowerCase()));
+
+    return {
+      differences: diffs.filter((x) => !stableCoinList.some((y) => y.address === x.address.toLowerCase())),
+      operationInfo,
+    };
   }
 
   private operationPriceFromOtherSource(
