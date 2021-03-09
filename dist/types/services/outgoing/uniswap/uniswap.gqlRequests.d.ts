@@ -1,0 +1,2 @@
+export declare const checkTokenArrPriceInUSDandETHByBlockNumber: string;
+export declare const checkTokenArrPriceInUSDandETHCurrent: string;
