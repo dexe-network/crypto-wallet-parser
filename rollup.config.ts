@@ -5,6 +5,7 @@ import { camelCase } from 'lodash';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
+import copy from 'rollup-plugin-copy'
 
 const pkg = require('./package.json');
 
@@ -26,6 +27,11 @@ const configs = [
       typescript(),
       commonjs({ extensions: ['.js', '.ts'] }),
       sourceMaps(),
+      copy({
+        targets: [
+          { src: 'static/dexe-crypto-wallet-parser.d.ts', dest: 'dist' },
+        ]
+      })
     ],
   },
   {
