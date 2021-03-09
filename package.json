@@ -6,7 +6,7 @@
   "main": "dist/dexe-crypto-wallet-parser.umd.js",
   "module": "dist/dexe-crypto-wallet-parser.es5.js",
   "browser": "dist/dexe-crypto-wallet-parser-browser.umd.js",
-  "typings": "dist/types/dexe-crypto-wallet-parser.d.ts",
+  "typings": "dist/types/main.d.ts",
   "files": [
     "dist"
   ],
