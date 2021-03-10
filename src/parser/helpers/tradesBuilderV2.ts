@@ -555,7 +555,7 @@ export class TradesBuilderV2 {
 
       if (
         currentData.normalTransactions &&
-        currentData.normalTransactions[0].to.toLowerCase() === config.uniswap.uniswapRouterAddress
+        currentData.normalTransactions[0]?.to?.toLowerCase() === config.uniswap.uniswapRouterAddress
       ) {
         const normalTransaction = currentData.normalTransactions[0];
         const uniswapTransactionData = await this.services.uniswapService.getUniswapTransactionByIdLimiter(

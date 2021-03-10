@@ -441,20 +441,21 @@ var TradesBuilderV2 = /** @class */ (function () {
         return false;
     };
     TradesBuilderV2.prototype.getTokenOperationState = function (currentData) {
+        var _a, _b;
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var state, balancesDifferencesData, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_5;
-            return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
+            return tslib_1.__generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
-                        _a.trys.push([0, 4, , 5]);
+                        _c.trys.push([0, 4, , 5]);
                         state = void 0;
                         balancesDifferencesData = this.balanceDifferences(currentData.balance, currentData.balanceBeforeTransaction, currentData.feeInETH);
                         if (!(currentData.normalTransactions &&
-                            currentData.normalTransactions[0].to.toLowerCase() === defaultConfig_1.default.uniswap.uniswapRouterAddress)) return [3 /*break*/, 2];
+                            ((_b = (_a = currentData.normalTransactions[0]) === null || _a === void 0 ? void 0 : _a.to) === null || _b === void 0 ? void 0 : _b.toLowerCase()) === defaultConfig_1.default.uniswap.uniswapRouterAddress)) return [3 /*break*/, 2];
                         normalTransaction = currentData.normalTransactions[0];
                         return [4 /*yield*/, this.services.uniswapService.getUniswapTransactionByIdLimiter(normalTransaction.hash, +normalTransaction.blockNumber)];
                     case 1:
-                        uniswapTransactionData = _a.sent();
+                        uniswapTransactionData = _c.sent();
                         // Catch Only correct Uniswap Swaps (for trades) Exclude add or remove from liquidity
                         if (uniswapTransactionData) {
                             operationPriceUniRaw = this.operationPriceFromUniswap(uniswapTransactionData);
@@ -531,10 +532,10 @@ var TradesBuilderV2 = /** @class */ (function () {
                             transactionFeeETH: transactionFeeETH,
                             transactionFeeUSD: transactionFeeUSD,
                         };
-                        _a.label = 3;
+                        _c.label = 3;
                     case 3: return [2 /*return*/, state];
                     case 4:
-                        e_5 = _a.sent();
+                        e_5 = _c.sent();
                         throw e_5;
                     case 5: return [2 /*return*/];
                 }
