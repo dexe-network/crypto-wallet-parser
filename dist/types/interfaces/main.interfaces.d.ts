@@ -3,7 +3,12 @@ import { UniswapServiceClient } from '../services/outgoing/uniswap/uniswap.brows
 import { UniswapServiceApi } from '../services/outgoing/uniswap/uniswap.main.service';
 import { EtherscanServiceClient } from '../services/outgoing/etherscan/etherscan.service.browser';
 import { EtherscanServiceApi } from '../services/outgoing/etherscan/etherscan.service.main';
+export declare enum PARSER_MODE {
+    Wallet = 0,
+    W2W = 1
+}
 export interface IParserClientConfig {
+    parserMode: PARSER_MODE;
     correctWallet: string;
     env: {
         infuraProjectId: string;
@@ -11,6 +16,7 @@ export interface IParserClientConfig {
     };
 }
 export interface IParserApiConfig {
+    parserMode: PARSER_MODE;
     correctWallet: string;
     lastCheckBlockNumber: number;
     startCheckBlockNumber: number;

@@ -3,6 +3,7 @@ import Bottleneck from 'bottleneck';
 import lodash, { uniq, chunk } from 'lodash';
 import BigNumber from 'bignumber.js';
 import moment from 'moment';
+import { BehaviorSubject } from 'rxjs';
 import { gql, GraphQLClient } from 'graphql-request';
 import IORedis from 'ioredis';
 import shortHash from 'shorthash2';
@@ -19,6 +20,12 @@ var TradeStatus;
     TradeStatus["OPEN"] = "OPEN";
     TradeStatus["CLOSE"] = "CLOSE";
 })(TradeStatus || (TradeStatus = {}));
+
+var PARSER_MODE;
+(function (PARSER_MODE) {
+    PARSER_MODE[PARSER_MODE["Wallet"] = 0] = "Wallet";
+    PARSER_MODE[PARSER_MODE["W2W"] = 1] = "W2W";
+})(PARSER_MODE || (PARSER_MODE = {}));
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -405,6 +412,16 @@ var buildBalanceTransformer = function (value, decimals) {
     var beforeDecimal = balance.div(divisor);
     return beforeDecimal;
 };
+var parsedBalanceToRaw = function (value, decimals) {
+    if (!value || !(typeof decimals === 'number')) {
+        return new BigNumber(0);
+    }
+    var balance = value;
+    var decimalsBN = new BigNumber(decimals);
+    var divisor = new BigNumber(10).pow(decimalsBN);
+    var beforeDecimal = balance.multipliedBy(divisor);
+    return beforeDecimal;
+};
 
 var ParseTransaction = /** @class */ (function () {
     function ParseTransaction(uniswapService) {
@@ -643,11 +660,48 @@ var stableCoinList = [
     },
 ];
 
+var generateIsTrustedProviderPattern = function (config) {
+    if (config.parserMode === PARSER_MODE.W2W) {
+        return {
+            first: true,
+            second: false,
+            third: true,
+        };
+    }
+    else {
+        return {
+            first: true,
+            second: false,
+            third: false,
+        };
+    }
+};
+var generateBehaviourConfig = function (config) {
+    return {
+        isTrustedProviderPattern: generateIsTrustedProviderPattern(config),
+    };
+};
+
+var ethDefaultInfo = {
+    address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+    decimals: '18',
+    name: 'Ethereum',
+    symbol: 'ETH',
+};
+var wethDefaultInfo = {
+    address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    decimals: '18',
+    name: 'Wrapped Ether',
+    symbol: 'WETH',
+};
+
 var TradesBuilderV2 = /** @class */ (function () {
-    function TradesBuilderV2(services) {
+    function TradesBuilderV2(services, config) {
         this.services = services;
+        this.config = config;
         this.calculateTransaction = new CalculateTransaction();
         this.parseTransactionWallet = new ParseTransaction(this.services.uniswapService);
+        this.behaviourConfig = generateBehaviourConfig(config);
     }
     TradesBuilderV2.prototype.buildTrades = function (data) {
         return __awaiter(this, void 0, void 0, function () {
@@ -969,6 +1023,7 @@ var TradesBuilderV2 = /** @class */ (function () {
             transactionFeeUSD: state.transactionFeeUSD,
             price: price,
             startDep: startDep,
+            operationInfo: state.operationInfo,
         };
     };
     TradesBuilderV2.prototype.calculateAverageStartDep = function (trade, startDep, price, tradeType) {
@@ -1069,13 +1124,13 @@ var TradesBuilderV2 = /** @class */ (function () {
     };
     TradesBuilderV2.prototype.getTokenOperationState = function (currentData) {
         return __awaiter(this, void 0, void 0, function () {
-            var state, balancesDifferences, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_5;
+            var state, balancesDifferencesData, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_5;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
                         state = void 0;
-                        balancesDifferences = this.balanceDifferences(currentData.balance, currentData.balanceBeforeTransaction);
+                        balancesDifferencesData = this.balanceDifferences(currentData.balance, currentData.balanceBeforeTransaction, currentData.feeInETH);
                         if (!(currentData.normalTransactions &&
                             currentData.normalTransactions[0].to.toLowerCase() === defaultConfig.uniswap.uniswapRouterAddress)) return [3 /*break*/, 2];
                         normalTransaction = currentData.normalTransactions[0];
@@ -1089,7 +1144,8 @@ var TradesBuilderV2 = /** @class */ (function () {
                             transactionFeeUSD = currentData.feeInETH.multipliedBy(uniswapTransactionData.ethPrice);
                             operationPriceIncludeFee = this.operationPriceWithFee(operationPriceUniRaw, transactionFeeETH, transactionFeeUSD);
                             state = {
-                                operations: balancesDifferences,
+                                operations: balancesDifferencesData.differences,
+                                operationInfo: balancesDifferencesData.operationInfo,
                                 amount: {
                                     raw: {
                                         ETH: operationPriceUniRaw.amountInETH,
@@ -1100,7 +1156,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                                         USD: operationPriceIncludeFee.amountInUSD,
                                     },
                                 },
-                                isTrustedProvider: true,
+                                isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.first,
                                 timeStamp: normalTransaction.timeStamp,
                                 transactionHash: normalTransaction.hash,
                                 transactionFeeETH: transactionFeeETH,
@@ -1108,12 +1164,13 @@ var TradesBuilderV2 = /** @class */ (function () {
                             };
                         }
                         else {
-                            operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferences, currentData.balance);
+                            operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferencesData.differences, currentData.balance);
                             transactionFeeETH = currentData.feeInETH;
                             transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
                             operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
                             state = {
-                                operations: balancesDifferences,
+                                operations: balancesDifferencesData.differences,
+                                operationInfo: balancesDifferencesData.operationInfo,
                                 amount: {
                                     raw: {
                                         ETH: operationPriceOtherRaw.amountInETH,
@@ -1124,7 +1181,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                                         USD: operationPriceIncludeFee.amountInUSD,
                                     },
                                 },
-                                isTrustedProvider: false,
+                                isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.second,
                                 timeStamp: normalTransaction.timeStamp,
                                 transactionHash: normalTransaction.hash,
                                 transactionFeeETH: transactionFeeETH,
@@ -1133,12 +1190,13 @@ var TradesBuilderV2 = /** @class */ (function () {
                         }
                         return [3 /*break*/, 3];
                     case 2:
-                        operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferences, currentData.balance);
+                        operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferencesData.differences, currentData.balance);
                         transactionFeeETH = currentData.feeInETH;
                         transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
                         operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
                         state = {
-                            operations: balancesDifferences,
+                            operations: balancesDifferencesData.differences,
+                            operationInfo: balancesDifferencesData.operationInfo,
                             amount: {
                                 raw: {
                                     ETH: operationPriceOtherRaw.amountInETH,
@@ -1149,7 +1207,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                                     USD: operationPriceIncludeFee.amountInUSD,
                                 },
                             },
-                            isTrustedProvider: false,
+                            isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.third,
                             timeStamp: currentData.timeStamp,
                             transactionHash: currentData.hash,
                             transactionFeeETH: transactionFeeETH,
@@ -1168,16 +1226,20 @@ var TradesBuilderV2 = /** @class */ (function () {
     TradesBuilderV2.prototype.operationPriceWithFee = function (operationPrice, feeETH, feeUSD) {
         return __assign(__assign({}, operationPrice), { amountInUSD: operationPrice.amountInUSD.plus(feeUSD), amountInETH: operationPrice.amountInETH.plus(feeETH) });
     };
-    TradesBuilderV2.prototype.balanceDifferences = function (currentBalance, beforeBalance) {
+    TradesBuilderV2.prototype.balanceDifferences = function (currentBalance, beforeBalance, parsedFeeInETH) {
         var e_6, _a;
         var _b, _c, _d;
         var tokensAddress = lodash.uniq(__spreadArray(__spreadArray([], __read(Object.keys(currentBalance))), __read(Object.keys(beforeBalance))));
         var diffs = [];
+        var operationInfo = {
+            sent: [],
+            received: [],
+        };
         try {
             for (var tokensAddress_1 = __values(tokensAddress), tokensAddress_1_1 = tokensAddress_1.next(); !tokensAddress_1_1.done; tokensAddress_1_1 = tokensAddress_1.next()) {
                 var key = tokensAddress_1_1.value;
                 if (!(currentBalance[key].amount.toString() === ((_c = (_b = beforeBalance[key]) === null || _b === void 0 ? void 0 : _b.amount) === null || _c === void 0 ? void 0 : _c.toString()))) {
-                    diffs.push({
+                    var item = {
                         symbol: currentBalance[key].symbol,
                         name: currentBalance[key].name,
                         address: currentBalance[key].address.toLowerCase(),
@@ -1185,7 +1247,21 @@ var TradesBuilderV2 = /** @class */ (function () {
                         amount: ((_d = beforeBalance[key]) === null || _d === void 0 ? void 0 : _d.amount)
                             ? currentBalance[key].amount.minus(beforeBalance[key].amount)
                             : new BigNumber(currentBalance[key].amount.toString()),
-                    });
+                    };
+                    // Exclude Fee From Balance Differences
+                    if (item.address === ethDefaultInfo.address) {
+                        if (item.amount.isLessThan(0)) {
+                            item.amount = item.amount.plus(parsedBalanceToRaw(parsedFeeInETH, +ethDefaultInfo.decimals));
+                        }
+                        if (item.amount.isGreaterThan(0)) {
+                            item.amount = item.amount.minus(parsedBalanceToRaw(parsedFeeInETH, +ethDefaultInfo.decimals));
+                        }
+                    }
+                    // set operationInfo
+                    if (item.amount.isLessThan(0) || item.amount.isGreaterThan(0)) {
+                        operationInfo.sent.push(item);
+                    }
+                    diffs.push(item);
                 }
             }
         }
@@ -1196,7 +1272,10 @@ var TradesBuilderV2 = /** @class */ (function () {
             }
             finally { if (e_6) throw e_6.error; }
         }
-        return diffs.filter(function (x) { return !stableCoinList.some(function (y) { return y.address === x.address.toLowerCase(); }); });
+        return {
+            differences: diffs.filter(function (x) { return !stableCoinList.some(function (y) { return y.address === x.address.toLowerCase(); }); }),
+            operationInfo: operationInfo,
+        };
     };
     TradesBuilderV2.prototype.operationPriceFromOtherSource = function (operations, balanceData) {
         // Outgoing operations
@@ -1236,19 +1315,6 @@ var TradesBuilderV2 = /** @class */ (function () {
     };
     return TradesBuilderV2;
 }());
-
-var ethDefaultInfo = {
-    address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-    decimals: '18',
-    name: 'Ethereum',
-    symbol: 'ETH',
-};
-var wethDefaultInfo = {
-    address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-    decimals: '18',
-    name: 'Wrapped Ether',
-    symbol: 'WETH',
-};
 
 var CalculateBalance = /** @class */ (function () {
     function CalculateBalance() {
@@ -1462,14 +1528,16 @@ var CalculateBalance = /** @class */ (function () {
 }());
 
 var ParserBase = /** @class */ (function () {
-    function ParserBase(services) {
+    function ParserBase(services, config) {
         this.services = services;
+        this.config = config;
         this.rawTransactions = [];
+        this.parserProgress = new BehaviorSubject(0);
         this.getTransaction = new GetTransaction(this.services.etherscanService);
         this.parseTransaction = new ParseTransaction(this.services.uniswapService);
         this.filterTransaction = new FilterTransaction();
         this.transformTransaction = new TransformTransaction();
-        this.tradesBuilderV2 = new TradesBuilderV2(this.services);
+        this.tradesBuilderV2 = new TradesBuilderV2(this.services, this.config);
         this.calculateBalance = new CalculateBalance();
         this.calculateTransaction = new CalculateTransaction();
     }
@@ -1480,6 +1548,8 @@ var ParserBase = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
+                        // set progress
+                        this.parserProgress.next(10);
                         return [4 /*yield*/, this.getTransaction.getAllTransactionByWalletAddress(this.config.correctWallet)];
                     case 1:
                         initStep1 = _a.sent();
@@ -1488,6 +1558,7 @@ var ParserBase = /** @class */ (function () {
                         return [3 /*break*/, 3];
                     case 2:
                         e_1 = _a.sent();
+                        this.parserProgress.complete();
                         console.log('🔥 error: %o', e_1);
                         throw e_1;
                     case 3: return [2 /*return*/];
@@ -1506,9 +1577,13 @@ var ParserBase = /** @class */ (function () {
                         if (!rawTransactions) {
                             throw new Error('Etherscan transaction download error');
                         }
+                        // set progress
+                        this.parserProgress.next(85);
                         return [4 /*yield*/, this.parseTransaction.parseTransactionBalancePrice(rawTransactions)];
                     case 1:
                         transactionStep1 = _a.sent();
+                        // set progress
+                        this.parserProgress.next(98);
                         return [4 /*yield*/, this.tradesBuilderV2.buildTrades(transactionStep1)];
                     case 2:
                         transactionStep2 = _a.sent();
@@ -1520,6 +1595,7 @@ var ParserBase = /** @class */ (function () {
                         tradesCount = this.calculateTransaction.tradesCount(transactionStep3);
                         totalIndicators = this.calculateTransaction.totalProfitLoss(transactionStep3);
                         totalPoints = this.calculateTransaction.totalPoints(transactionStep3);
+                        this.parserProgress.complete();
                         return [2 /*return*/, {
                                 points: totalPoints,
                                 currentDeposit: currentDeposit,
@@ -1532,6 +1608,7 @@ var ParserBase = /** @class */ (function () {
                             }];
                     case 3:
                         e_2 = _a.sent();
+                        this.parserProgress.complete();
                         console.log('🔥 error: %o', e_2);
                         throw e_2;
                     case 4: return [2 /*return*/];
@@ -2087,7 +2164,7 @@ var ParserApi = /** @class */ (function (_super) {
             web3Service: new Web3Service(config),
             uniswapService: new UniswapServiceApi(config),
             etherscanService: new EtherscanServiceApi(config),
-        }) || this;
+        }, config) || this;
         _this.config = config;
         return _this;
     }
@@ -2113,5 +2190,5 @@ var ParserApi = /** @class */ (function (_super) {
     return ParserApi;
 }(ParserBase));
 
-export { ParserApi, TradeStatus, TradeType };
+export { PARSER_MODE, ParserApi, TradeStatus, TradeType };
 //# sourceMappingURL=dexe-crypto-wallet-parser.es5.js.map

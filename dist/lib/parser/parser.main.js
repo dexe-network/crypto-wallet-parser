@@ -13,7 +13,7 @@ var ParserApi = /** @class */ (function (_super) {
             web3Service: new web3_service_1.default(config),
             uniswapService: new uniswap_main_service_1.UniswapServiceApi(config),
             etherscanService: new etherscan_service_main_1.EtherscanServiceApi(config),
-        }) || this;
+        }, config) || this;
         _this.config = config;
         return _this;
     }

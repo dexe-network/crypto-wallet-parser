@@ -1,11 +1,13 @@
 import { IGroupedTransactions, ITokenBalanceItem } from '../../interfaces/etherscan.interfaces';
 import { ITradeIterateObject } from '../../interfaces/parser/tradesBuilderV2.interface';
-import { IServices } from '../../interfaces';
+import { IParserClientConfig, IServices } from '../../interfaces';
 export declare class TradesBuilderV2 {
     private services;
+    private config;
     private calculateTransaction;
     private parseTransactionWallet;
-    constructor(services: IServices);
+    private behaviourConfig;
+    constructor(services: IServices, config: IParserClientConfig);
     buildTrades(data: IGroupedTransactions<ITokenBalanceItem>[]): Promise<ITradeIterateObject>;
     private generateVirtualTrades;
     private generateVirtualTransactions;

@@ -11,11 +11,15 @@ var tokens_helper_1 = require("../../helpers/tokens.helper");
 var calculateTransaction_1 = require("./calculateTransaction");
 var stableCoins_1 = require("../../constants/stableCoins");
 var parseTransaction_1 = require("./parseTransaction");
+var tradesBuilderV2_configs_1 = require("../configs/tradesBuilderV2.configs");
+var tokenInfo_1 = require("../../constants/tokenInfo");
 var TradesBuilderV2 = /** @class */ (function () {
-    function TradesBuilderV2(services) {
+    function TradesBuilderV2(services, config) {
         this.services = services;
+        this.config = config;
         this.calculateTransaction = new calculateTransaction_1.CalculateTransaction();
         this.parseTransactionWallet = new parseTransaction_1.ParseTransaction(this.services.uniswapService);
+        this.behaviourConfig = tradesBuilderV2_configs_1.generateBehaviourConfig(config);
     }
     TradesBuilderV2.prototype.buildTrades = function (data) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
@@ -337,6 +341,7 @@ var TradesBuilderV2 = /** @class */ (function () {
             transactionFeeUSD: state.transactionFeeUSD,
             price: price,
             startDep: startDep,
+            operationInfo: state.operationInfo,
         };
     };
     TradesBuilderV2.prototype.calculateAverageStartDep = function (trade, startDep, price, tradeType) {
@@ -437,13 +442,13 @@ var TradesBuilderV2 = /** @class */ (function () {
     };
     TradesBuilderV2.prototype.getTokenOperationState = function (currentData) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var state, balancesDifferences, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_5;
+            var state, balancesDifferencesData, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_5;
             return tslib_1.__generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
                         state = void 0;
-                        balancesDifferences = this.balanceDifferences(currentData.balance, currentData.balanceBeforeTransaction);
+                        balancesDifferencesData = this.balanceDifferences(currentData.balance, currentData.balanceBeforeTransaction, currentData.feeInETH);
                         if (!(currentData.normalTransactions &&
                             currentData.normalTransactions[0].to.toLowerCase() === defaultConfig_1.default.uniswap.uniswapRouterAddress)) return [3 /*break*/, 2];
                         normalTransaction = currentData.normalTransactions[0];
@@ -457,7 +462,8 @@ var TradesBuilderV2 = /** @class */ (function () {
                             transactionFeeUSD = currentData.feeInETH.multipliedBy(uniswapTransactionData.ethPrice);
                             operationPriceIncludeFee = this.operationPriceWithFee(operationPriceUniRaw, transactionFeeETH, transactionFeeUSD);
                             state = {
-                                operations: balancesDifferences,
+                                operations: balancesDifferencesData.differences,
+                                operationInfo: balancesDifferencesData.operationInfo,
                                 amount: {
                                     raw: {
                                         ETH: operationPriceUniRaw.amountInETH,
@@ -468,7 +474,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                                         USD: operationPriceIncludeFee.amountInUSD,
                                     },
                                 },
-                                isTrustedProvider: true,
+                                isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.first,
                                 timeStamp: normalTransaction.timeStamp,
                                 transactionHash: normalTransaction.hash,
                                 transactionFeeETH: transactionFeeETH,
@@ -476,12 +482,13 @@ var TradesBuilderV2 = /** @class */ (function () {
                             };
                         }
                         else {
-                            operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferences, currentData.balance);
+                            operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferencesData.differences, currentData.balance);
                             transactionFeeETH = currentData.feeInETH;
                             transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
                             operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
                             state = {
-                                operations: balancesDifferences,
+                                operations: balancesDifferencesData.differences,
+                                operationInfo: balancesDifferencesData.operationInfo,
                                 amount: {
                                     raw: {
                                         ETH: operationPriceOtherRaw.amountInETH,
@@ -492,7 +499,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                                         USD: operationPriceIncludeFee.amountInUSD,
                                     },
                                 },
-                                isTrustedProvider: false,
+                                isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.second,
                                 timeStamp: normalTransaction.timeStamp,
                                 transactionHash: normalTransaction.hash,
                                 transactionFeeETH: transactionFeeETH,
@@ -501,12 +508,13 @@ var TradesBuilderV2 = /** @class */ (function () {
                         }
                         return [3 /*break*/, 3];
                     case 2:
-                        operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferences, currentData.balance);
+                        operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferencesData.differences, currentData.balance);
                         transactionFeeETH = currentData.feeInETH;
                         transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
                         operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
                         state = {
-                            operations: balancesDifferences,
+                            operations: balancesDifferencesData.differences,
+                            operationInfo: balancesDifferencesData.operationInfo,
                             amount: {
                                 raw: {
                                     ETH: operationPriceOtherRaw.amountInETH,
@@ -517,7 +525,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                                     USD: operationPriceIncludeFee.amountInUSD,
                                 },
                             },
-                            isTrustedProvider: false,
+                            isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.third,
                             timeStamp: currentData.timeStamp,
                             transactionHash: currentData.hash,
                             transactionFeeETH: transactionFeeETH,
@@ -536,16 +544,20 @@ var TradesBuilderV2 = /** @class */ (function () {
     TradesBuilderV2.prototype.operationPriceWithFee = function (operationPrice, feeETH, feeUSD) {
         return tslib_1.__assign(tslib_1.__assign({}, operationPrice), { amountInUSD: operationPrice.amountInUSD.plus(feeUSD), amountInETH: operationPrice.amountInETH.plus(feeETH) });
     };
-    TradesBuilderV2.prototype.balanceDifferences = function (currentBalance, beforeBalance) {
+    TradesBuilderV2.prototype.balanceDifferences = function (currentBalance, beforeBalance, parsedFeeInETH) {
         var e_6, _a;
         var _b, _c, _d;
         var tokensAddress = lodash_1.default.uniq(tslib_1.__spreadArray(tslib_1.__spreadArray([], tslib_1.__read(Object.keys(currentBalance))), tslib_1.__read(Object.keys(beforeBalance))));
         var diffs = [];
+        var operationInfo = {
+            sent: [],
+            received: [],
+        };
         try {
             for (var tokensAddress_1 = tslib_1.__values(tokensAddress), tokensAddress_1_1 = tokensAddress_1.next(); !tokensAddress_1_1.done; tokensAddress_1_1 = tokensAddress_1.next()) {
                 var key = tokensAddress_1_1.value;
                 if (!(currentBalance[key].amount.toString() === ((_c = (_b = beforeBalance[key]) === null || _b === void 0 ? void 0 : _b.amount) === null || _c === void 0 ? void 0 : _c.toString()))) {
-                    diffs.push({
+                    var item = {
                         symbol: currentBalance[key].symbol,
                         name: currentBalance[key].name,
                         address: currentBalance[key].address.toLowerCase(),
@@ -553,7 +565,21 @@ var TradesBuilderV2 = /** @class */ (function () {
                         amount: ((_d = beforeBalance[key]) === null || _d === void 0 ? void 0 : _d.amount)
                             ? currentBalance[key].amount.minus(beforeBalance[key].amount)
                             : new bignumber_js_1.default(currentBalance[key].amount.toString()),
-                    });
+                    };
+                    // Exclude Fee From Balance Differences
+                    if (item.address === tokenInfo_1.ethDefaultInfo.address) {
+                        if (item.amount.isLessThan(0)) {
+                            item.amount = item.amount.plus(tokens_helper_1.parsedBalanceToRaw(parsedFeeInETH, +tokenInfo_1.ethDefaultInfo.decimals));
+                        }
+                        if (item.amount.isGreaterThan(0)) {
+                            item.amount = item.amount.minus(tokens_helper_1.parsedBalanceToRaw(parsedFeeInETH, +tokenInfo_1.ethDefaultInfo.decimals));
+                        }
+                    }
+                    // set operationInfo
+                    if (item.amount.isLessThan(0) || item.amount.isGreaterThan(0)) {
+                        operationInfo.sent.push(item);
+                    }
+                    diffs.push(item);
                 }
             }
         }
@@ -564,7 +590,10 @@ var TradesBuilderV2 = /** @class */ (function () {
             }
             finally { if (e_6) throw e_6.error; }
         }
-        return diffs.filter(function (x) { return !stableCoins_1.stableCoinList.some(function (y) { return y.address === x.address.toLowerCase(); }); });
+        return {
+            differences: diffs.filter(function (x) { return !stableCoins_1.stableCoinList.some(function (y) { return y.address === x.address.toLowerCase(); }); }),
+            operationInfo: operationInfo,
+        };
     };
     TradesBuilderV2.prototype.operationPriceFromOtherSource = function (operations, balanceData) {
         // Outgoing operations

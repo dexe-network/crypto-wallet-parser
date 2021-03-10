@@ -6,10 +6,12 @@ import { TransformTransaction } from './helpers/transformTransaction';
 import { TradesBuilderV2 } from './helpers/tradesBuilderV2';
 import { CalculateBalance } from './helpers/calculateBalance';
 import { CalculateTransaction } from './helpers/calculateTransaction';
+import { BehaviorSubject } from 'rxjs';
 export declare abstract class ParserBase<ConfigType> {
     protected services: IServices;
-    abstract config: IParserClientConfig;
+    protected config: IParserClientConfig;
     rawTransactions: IGroupedTransactions<ITokenBalanceItemBase>[];
+    parserProgress: BehaviorSubject<number>;
     protected getTransaction: GetTransaction;
     protected parseTransaction: ParseTransaction;
     protected filterTransaction: FilterTransaction;
@@ -17,7 +19,7 @@ export declare abstract class ParserBase<ConfigType> {
     protected tradesBuilderV2: TradesBuilderV2;
     protected calculateBalance: CalculateBalance;
     protected calculateTransaction: CalculateTransaction;
-    constructor(services: IServices);
+    constructor(services: IServices, config: IParserClientConfig);
     init(): Promise<void>;
     process(): Promise<IDataProviderResult>;
 }

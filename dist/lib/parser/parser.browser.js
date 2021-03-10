@@ -13,7 +13,7 @@ var ParserClient = /** @class */ (function (_super) {
             web3Service: new web3_service_1.default(config),
             uniswapService: new uniswap_browser_service_1.UniswapServiceClient(config),
             etherscanService: new etherscan_service_browser_1.EtherscanServiceClient(config),
-        }) || this;
+        }, config) || this;
         _this.config = config;
         return _this;
     }

@@ -9,15 +9,18 @@ var transformTransaction_1 = require("./helpers/transformTransaction");
 var tradesBuilderV2_1 = require("./helpers/tradesBuilderV2");
 var calculateBalance_1 = require("./helpers/calculateBalance");
 var calculateTransaction_1 = require("./helpers/calculateTransaction");
+var rxjs_1 = require("rxjs");
 var ParserBase = /** @class */ (function () {
-    function ParserBase(services) {
+    function ParserBase(services, config) {
         this.services = services;
+        this.config = config;
         this.rawTransactions = [];
+        this.parserProgress = new rxjs_1.BehaviorSubject(0);
         this.getTransaction = new getTransaction_1.GetTransaction(this.services.etherscanService);
         this.parseTransaction = new parseTransaction_1.ParseTransaction(this.services.uniswapService);
         this.filterTransaction = new filterTransaction_1.FilterTransaction();
         this.transformTransaction = new transformTransaction_1.TransformTransaction();
-        this.tradesBuilderV2 = new tradesBuilderV2_1.TradesBuilderV2(this.services);
+        this.tradesBuilderV2 = new tradesBuilderV2_1.TradesBuilderV2(this.services, this.config);
         this.calculateBalance = new calculateBalance_1.CalculateBalance();
         this.calculateTransaction = new calculateTransaction_1.CalculateTransaction();
     }
@@ -28,6 +31,8 @@ var ParserBase = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
+                        // set progress
+                        this.parserProgress.next(10);
                         return [4 /*yield*/, this.getTransaction.getAllTransactionByWalletAddress(this.config.correctWallet)];
                     case 1:
                         initStep1 = _a.sent();
@@ -36,6 +41,7 @@ var ParserBase = /** @class */ (function () {
                         return [3 /*break*/, 3];
                     case 2:
                         e_1 = _a.sent();
+                        this.parserProgress.complete();
                         console.log('🔥 error: %o', e_1);
                         throw e_1;
                     case 3: return [2 /*return*/];
@@ -54,9 +60,13 @@ var ParserBase = /** @class */ (function () {
                         if (!rawTransactions) {
                             throw new Error('Etherscan transaction download error');
                         }
+                        // set progress
+                        this.parserProgress.next(85);
                         return [4 /*yield*/, this.parseTransaction.parseTransactionBalancePrice(rawTransactions)];
                     case 1:
                         transactionStep1 = _a.sent();
+                        // set progress
+                        this.parserProgress.next(98);
                         return [4 /*yield*/, this.tradesBuilderV2.buildTrades(transactionStep1)];
                     case 2:
                         transactionStep2 = _a.sent();
@@ -68,6 +78,7 @@ var ParserBase = /** @class */ (function () {
                         tradesCount = this.calculateTransaction.tradesCount(transactionStep3);
                         totalIndicators = this.calculateTransaction.totalProfitLoss(transactionStep3);
                         totalPoints = this.calculateTransaction.totalPoints(transactionStep3);
+                        this.parserProgress.complete();
                         return [2 /*return*/, {
                                 points: totalPoints,
                                 currentDeposit: currentDeposit,
@@ -80,6 +91,7 @@ var ParserBase = /** @class */ (function () {
                             }];
                     case 3:
                         e_2 = _a.sent();
+                        this.parserProgress.complete();
                         console.log('🔥 error: %o', e_2);
                         throw e_2;
                     case 4: return [2 /*return*/];
