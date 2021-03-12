@@ -378,6 +378,7 @@ export class TradesBuilderV2 {
       averageStartDep: this.calculateAverageStartDep(trade, startDep, price, tradeType),
       tokenInfo,
       sellOperations: [],
+      isVirtualTransaction: state.isVirtualTransaction,
       transactionHash: state.transactionHash,
       timeStamp: state.timeStamp,
       costUSD: new BigNumber(state.amount.raw.USD),
@@ -575,6 +576,7 @@ export class TradesBuilderV2 {
             transactionFeeUSD,
           );
           state = {
+            isVirtualTransaction: currentData.isVirtualTransaction,
             operations: balancesDifferencesData.differences,
             operationInfo: balancesDifferencesData.operationInfo,
             amount: {
@@ -607,6 +609,7 @@ export class TradesBuilderV2 {
             transactionFeeUSD,
           );
           state = {
+            isVirtualTransaction: currentData.isVirtualTransaction,
             operations: balancesDifferencesData.differences,
             operationInfo: balancesDifferencesData.operationInfo,
             amount: {
@@ -639,6 +642,7 @@ export class TradesBuilderV2 {
           transactionFeeUSD,
         );
         state = {
+          isVirtualTransaction: currentData.isVirtualTransaction,
           operations: balancesDifferencesData.differences,
           operationInfo: balancesDifferencesData.operationInfo,
           amount: {
@@ -712,8 +716,11 @@ export class TradesBuilderV2 {
         }
 
         // set operationInfo
-        if (item.amount.isLessThan(0) || item.amount.isGreaterThan(0)) {
+        if (item.amount.isLessThan(0)) {
           operationInfo.sent.push(item);
+        }
+        if (item.amount.isGreaterThan(0)) {
+          operationInfo.received.push(item);
         }
 
         diffs.push(item);

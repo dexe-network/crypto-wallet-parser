@@ -16,6 +16,7 @@ export interface IOperationItem {
     transactionFeeUSD: BigNumber;
     timeStamp: string;
     transactionHash: string;
+    isVirtualTransaction: boolean;
     isTrustedProvider: boolean;
 }
 export interface IOperationTokens {
@@ -80,6 +81,7 @@ export interface ITradeEvent {
     price: IEventTokenPrice;
     startDep: IStartDep;
     balance: BigNumber;
+    isVirtualTransaction: boolean;
     sellOperations: ISellOperations[];
     averageStartDep: IAverageStartDep;
     operationInfo: IOperationTokens;

@@ -1019,6 +1019,7 @@
                 averageStartDep: this.calculateAverageStartDep(trade, startDep, price, tradeType),
                 tokenInfo: tokenInfo,
                 sellOperations: [],
+                isVirtualTransaction: state.isVirtualTransaction,
                 transactionHash: state.transactionHash,
                 timeStamp: state.timeStamp,
                 costUSD: new BigNumber__default['default'](state.amount.raw.USD),
@@ -1149,6 +1150,7 @@
                                 transactionFeeUSD = currentData.feeInETH.multipliedBy(uniswapTransactionData.ethPrice);
                                 operationPriceIncludeFee = this.operationPriceWithFee(operationPriceUniRaw, transactionFeeETH, transactionFeeUSD);
                                 state = {
+                                    isVirtualTransaction: currentData.isVirtualTransaction,
                                     operations: balancesDifferencesData.differences,
                                     operationInfo: balancesDifferencesData.operationInfo,
                                     amount: {
@@ -1174,6 +1176,7 @@
                                 transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
                                 operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
                                 state = {
+                                    isVirtualTransaction: currentData.isVirtualTransaction,
                                     operations: balancesDifferencesData.differences,
                                     operationInfo: balancesDifferencesData.operationInfo,
                                     amount: {
@@ -1200,6 +1203,7 @@
                             transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
                             operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
                             state = {
+                                isVirtualTransaction: currentData.isVirtualTransaction,
                                 operations: balancesDifferencesData.differences,
                                 operationInfo: balancesDifferencesData.operationInfo,
                                 amount: {
@@ -1263,8 +1267,11 @@
                             }
                         }
                         // set operationInfo
-                        if (item.amount.isLessThan(0) || item.amount.isGreaterThan(0)) {
+                        if (item.amount.isLessThan(0)) {
                             operationInfo.sent.push(item);
+                        }
+                        if (item.amount.isGreaterThan(0)) {
+                            operationInfo.received.push(item);
                         }
                         diffs.push(item);
                     }
