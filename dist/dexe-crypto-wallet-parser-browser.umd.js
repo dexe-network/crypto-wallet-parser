@@ -764,6 +764,7 @@
                     blockNumber: currentBlockNumber - 10,
                     previousTransactionBlockNumber: lastGroupedTransaction.blockNumber,
                     feeInETH: new BigNumber__default['default'](0),
+                    isVirtualTransaction: true,
                     hash: "AUTO_CLOSE_TRADE_TRANSACTION " + (index + 1),
                     timeStamp: moment__default['default']().unix().toString(),
                 };
@@ -1333,7 +1334,7 @@
                         ? accumulatorValue[index - 1].blockNumber
                         : lookupResult.blockNumber, balanceBeforeTransaction: ((_c = accumulatorValue[index - 1]) === null || _c === void 0 ? void 0 : _c.balance)
                         ? accumulatorValue[index - 1].balance
-                        : lookupResult.balance, hash: lookupResult.hash, timeStamp: lookupResult.timeStamp });
+                        : lookupResult.balance, hash: lookupResult.hash, isVirtualTransaction: false, timeStamp: lookupResult.timeStamp });
                 accumulatorValue.push(result);
                 return accumulatorValue;
             }, []);

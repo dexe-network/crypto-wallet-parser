@@ -29,6 +29,7 @@ export class CalculateBalance {
           ? accumulatorValue[index - 1].balance
           : lookupResult.balance,
         hash: lookupResult.hash,
+        isVirtualTransaction: false,
         timeStamp: lookupResult.timeStamp,
       };
       accumulatorValue.push(result);

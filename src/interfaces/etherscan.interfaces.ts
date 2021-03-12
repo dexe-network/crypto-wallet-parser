@@ -117,6 +117,7 @@ export interface IGroupedTransactions<ItemType> extends IGroupedTransactionsBase
   previousTransactionBlockNumber: number;
   feeInETH: BigNumber;
   hash: string;
+  isVirtualTransaction: boolean;
   timeStamp: string;
 }
 

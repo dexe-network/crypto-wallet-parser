@@ -90,6 +90,7 @@ export class TradesBuilderV2 {
         blockNumber: currentBlockNumber - 10,
         previousTransactionBlockNumber: lastGroupedTransaction.blockNumber,
         feeInETH: new BigNumber(0),
+        isVirtualTransaction: true,
         hash: `AUTO_CLOSE_TRADE_TRANSACTION ${index + 1}`,
         timeStamp: moment().unix().toString(),
       };
