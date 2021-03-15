@@ -427,7 +427,8 @@ var ParseTransaction = /** @class */ (function () {
     function ParseTransaction(uniswapService) {
         this.uniswapService = uniswapService;
     }
-    ParseTransaction.prototype.parseTransactionBalancePrice = function (transactions) {
+    ParseTransaction.prototype.parseTransactionBalancePrice = function (transactions, isVirtualTransactions) {
+        if (isVirtualTransactions === void 0) { isVirtualTransactions = false; }
         return __awaiter(this, void 0, void 0, function () {
             var resultWithParsedBalance, e_1;
             var _this = this;
@@ -435,30 +436,30 @@ var ParseTransaction = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, Promise.all(transactions.map(function (value, index, array) { return __awaiter(_this, void 0, void 0, function () {
-                                var valueCopy, prices, _a, _b, key, uniswapResultFirst, _c, _d, key, uniswapResultSecond;
+                        return [4 /*yield*/, Promise.all(transactions.map(function (itemValue, index, array) { return __awaiter(_this, void 0, void 0, function () {
+                                var value, prices, _a, _b, key, uniswapResultFirst, _c, _d, key, uniswapResultSecond;
                                 var e_2, _e, e_3, _f;
                                 return __generator(this, function (_g) {
                                     switch (_g.label) {
                                         case 0:
-                                            valueCopy = __assign({}, value);
+                                            value = itemValue;
                                             return [4 /*yield*/, this.uniswapService.checkTokenArrPriceInUSDandETHLimiter({
                                                     tokens: Object.keys(value.balance),
-                                                    blockNumber: valueCopy.blockNumber,
+                                                    blockNumber: value.blockNumber,
                                                 })];
                                         case 1:
                                             prices = _g.sent();
                                             try {
                                                 for (_a = __values(Object.keys(value.balance)), _b = _a.next(); !_b.done; _b = _a.next()) {
                                                     key = _b.value;
-                                                    uniswapResultFirst = prices[valueCopy.balance[key].address];
-                                                    valueCopy.balance[key].ethPer1Token = uniswapResultFirst.ethPer1Token;
-                                                    valueCopy.balance[key].usdPer1Token = uniswapResultFirst.usdPer1Token;
-                                                    valueCopy.balance[key].usdPer1ETH = uniswapResultFirst.usdPer1ETH;
-                                                    valueCopy.balance[key].amountInETH = buildBalanceTransformer(
+                                                    uniswapResultFirst = prices[value.balance[key].address];
+                                                    value.balance[key].ethPer1Token = uniswapResultFirst.ethPer1Token;
+                                                    value.balance[key].usdPer1Token = uniswapResultFirst.usdPer1Token;
+                                                    value.balance[key].usdPer1ETH = uniswapResultFirst.usdPer1ETH;
+                                                    value.balance[key].amountInETH = buildBalanceTransformer(
                                                     // Catch less zero token balance (Fix minus Dep)
-                                                    valueCopy.balance[key].amount.isLessThan(0) ? new BigNumber(0) : valueCopy.balance[key].amount, +valueCopy.balance[key].decimals).multipliedBy(uniswapResultFirst.ethPer1Token);
-                                                    valueCopy.balance[key].amountInUSD = buildBalanceTransformer(valueCopy.balance[key].amount.isLessThan(0) ? new BigNumber(0) : valueCopy.balance[key].amount, +valueCopy.balance[key].decimals).multipliedBy(uniswapResultFirst.usdPer1Token);
+                                                    value.balance[key].amount.isLessThan(0) ? new BigNumber(0) : value.balance[key].amount, +value.balance[key].decimals).multipliedBy(uniswapResultFirst.ethPer1Token);
+                                                    value.balance[key].amountInUSD = buildBalanceTransformer(value.balance[key].amount.isLessThan(0) ? new BigNumber(0) : value.balance[key].amount, +value.balance[key].decimals).multipliedBy(uniswapResultFirst.usdPer1Token);
                                                 }
                                             }
                                             catch (e_2_1) { e_2 = { error: e_2_1 }; }
@@ -468,20 +469,20 @@ var ParseTransaction = /** @class */ (function () {
                                                 }
                                                 finally { if (e_2) throw e_2.error; }
                                             }
-                                            if (index === 0) {
+                                            if (index === 0 && !isVirtualTransactions) {
                                                 try {
                                                     for (_c = __values(Object.keys(value.balanceBeforeTransaction)), _d = _c.next(); !_d.done; _d = _c.next()) {
                                                         key = _d.value;
-                                                        uniswapResultSecond = prices[valueCopy.balanceBeforeTransaction[key].address];
-                                                        valueCopy.balanceBeforeTransaction[key].ethPer1Token = uniswapResultSecond.ethPer1Token;
-                                                        valueCopy.balanceBeforeTransaction[key].usdPer1Token = uniswapResultSecond.usdPer1Token;
-                                                        valueCopy.balanceBeforeTransaction[key].usdPer1ETH = uniswapResultSecond.usdPer1Token;
-                                                        valueCopy.balanceBeforeTransaction[key].amountInETH = buildBalanceTransformer(valueCopy.balanceBeforeTransaction[key].amount.isLessThan(0)
+                                                        uniswapResultSecond = prices[value.balanceBeforeTransaction[key].address];
+                                                        value.balanceBeforeTransaction[key].ethPer1Token = uniswapResultSecond.ethPer1Token;
+                                                        value.balanceBeforeTransaction[key].usdPer1Token = uniswapResultSecond.usdPer1Token;
+                                                        value.balanceBeforeTransaction[key].usdPer1ETH = uniswapResultSecond.usdPer1Token;
+                                                        value.balanceBeforeTransaction[key].amountInETH = buildBalanceTransformer(value.balanceBeforeTransaction[key].amount.isLessThan(0)
                                                             ? new BigNumber(0)
-                                                            : valueCopy.balanceBeforeTransaction[key].amount, +valueCopy.balanceBeforeTransaction[key].decimals).multipliedBy(uniswapResultSecond.ethPer1Token);
-                                                        valueCopy.balanceBeforeTransaction[key].amountInUSD = buildBalanceTransformer(valueCopy.balanceBeforeTransaction[key].amount.isLessThan(0)
+                                                            : value.balanceBeforeTransaction[key].amount, +value.balanceBeforeTransaction[key].decimals).multipliedBy(uniswapResultSecond.ethPer1Token);
+                                                        value.balanceBeforeTransaction[key].amountInUSD = buildBalanceTransformer(value.balanceBeforeTransaction[key].amount.isLessThan(0)
                                                             ? new BigNumber(0)
-                                                            : valueCopy.balanceBeforeTransaction[key].amount, +valueCopy.balanceBeforeTransaction[key].decimals).multipliedBy(uniswapResultSecond.usdPer1Token);
+                                                            : value.balanceBeforeTransaction[key].amount, +value.balanceBeforeTransaction[key].decimals).multipliedBy(uniswapResultSecond.usdPer1Token);
                                                     }
                                                 }
                                                 catch (e_3_1) { e_3 = { error: e_3_1 }; }
@@ -492,20 +493,13 @@ var ParseTransaction = /** @class */ (function () {
                                                     finally { if (e_3) throw e_3.error; }
                                                 }
                                             }
-                                            return [2 /*return*/, valueCopy];
+                                            return [2 /*return*/, value];
                                     }
                                 });
                             }); }))];
                     case 1:
                         resultWithParsedBalance = _a.sent();
-                        return [2 /*return*/, resultWithParsedBalance.map(function (value, index, array) {
-                                var valueCopy = __assign({}, value);
-                                if (index === 0) ;
-                                else {
-                                    valueCopy.balanceBeforeTransaction = array[index - 1].balance;
-                                }
-                                return valueCopy;
-                            })];
+                        return [2 /*return*/, resultWithParsedBalance];
                     case 2:
                         e_1 = _a.sent();
                         throw e_1;
@@ -737,7 +731,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                         return [4 /*yield*/, this.services.web3Service.getCurrentBlockNumberLimiter()];
                     case 1:
                         currentBlockNumber = _a.sent();
-                        return [4 /*yield*/, this.parseTransactionWallet.parseTransactionBalancePrice(this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber))];
+                        return [4 /*yield*/, this.parseTransactionWallet.parseTransactionBalancePrice(this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber), true)];
                     case 2: return [2 /*return*/, _a.sent()];
                     case 3:
                         e_1 = _a.sent();
@@ -750,7 +744,7 @@ var TradesBuilderV2 = /** @class */ (function () {
     TradesBuilderV2.prototype.generateVirtualTransactions = function (openTrades, lastGroupedTransaction, currentBlockNumber) {
         var _this = this;
         return openTrades.reduce(function (accum, value, index) {
-            var balanceBeforeTransaction = index === 0 ? lastGroupedTransaction.balance : accum[index - 1].balance;
+            var balanceBeforeTransaction = lastGroupedTransaction.balance;
             var result = {
                 normalTransactions: [],
                 internalTransactions: [],
@@ -771,7 +765,16 @@ var TradesBuilderV2 = /** @class */ (function () {
     };
     TradesBuilderV2.prototype.generateBalanceDiffForVirtualTradePnl = function (trade, balance) {
         var _a;
-        return __assign(__assign({}, balance), (_a = {}, _a[trade.tokenAddress] = {
+        return __assign(__assign({}, Object.values(balance).reduce(function (accum, value) {
+            accum[value.address] = {
+                symbol: value.symbol,
+                name: value.name,
+                address: value.address,
+                decimals: value.decimals,
+                amount: value.amount.negated().negated(),
+            };
+            return accum;
+        }, {})), (_a = {}, _a[trade.tokenAddress] = {
             symbol: balance[trade.tokenAddress].symbol,
             name: balance[trade.tokenAddress].name,
             address: balance[trade.tokenAddress].address,
@@ -1383,9 +1386,21 @@ var CalculateBalance = /** @class */ (function () {
             return true;
         }
     };
+    CalculateBalance.prototype.deepCloneBalance = function (balance) {
+        return Object.values(balance).reduce(function (accum, value) {
+            accum[value.address] = {
+                symbol: value.symbol,
+                name: value.name,
+                address: value.address,
+                decimals: value.decimals,
+                amount: value.amount.negated().negated(),
+            };
+            return accum;
+        }, {});
+    };
     CalculateBalance.prototype.balanceLookup = function (data, previousBalance, wallet) {
         var _this = this;
-        var localPreviousBalance = __assign({}, previousBalance) || {};
+        var localPreviousBalance = this.deepCloneBalance(previousBalance || {});
         var result = Object.keys(data).reduce(function (accum, value) {
             if (value === 'normalTransactions' && data[value]) {
                 _this.balanceAndFeeFromNormal(data[value], accum, wallet, data);
@@ -1403,7 +1418,7 @@ var CalculateBalance = /** @class */ (function () {
                 return accum;
             }
             return accum;
-        }, { balance: __assign({}, localPreviousBalance), feeInETH: new BigNumber(0), blockNumber: 0, hash: '0', timeStamp: '0' });
+        }, { balance: localPreviousBalance, feeInETH: new BigNumber(0), blockNumber: 0, hash: '0', timeStamp: '0' });
         // Minus Fee Operation
         // MINUS Transaction FEE from main eth balance
         if (result.feeInETH.isGreaterThan(0)) {

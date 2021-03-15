@@ -66,12 +66,27 @@ export class CalculateBalance {
     }
   }
 
+  private deepCloneBalance(
+    balance: ITokenBalanceInfo<ITokenBalanceItemBase>,
+  ): ITokenBalanceInfo<ITokenBalanceItemBase> {
+    return Object.values(balance).reduce((accum, value) => {
+      accum[value.address] = {
+        symbol: value.symbol,
+        name: value.name,
+        address: value.address,
+        decimals: value.decimals,
+        amount: value.amount.negated().negated(),
+      };
+      return accum;
+    }, {} as ITokenBalanceInfo<ITokenBalanceItemBase>);
+  }
+
   private balanceLookup(
     data: IGroupedTransactionsBase,
     previousBalance: ITokenBalanceInfo<ITokenBalanceItemBase>,
     wallet: string,
   ): IBalanceLookupResult {
-    const localPreviousBalance = { ...previousBalance } || {};
+    const localPreviousBalance = this.deepCloneBalance(previousBalance || {});
     const result = Object.keys(data).reduce<IBalanceLookupResult>(
       (accum, value) => {
         if (value === 'normalTransactions' && data[value]) {
@@ -95,7 +110,7 @@ export class CalculateBalance {
 
         return accum;
       },
-      { balance: { ...localPreviousBalance }, feeInETH: new BigNumber(0), blockNumber: 0, hash: '0', timeStamp: '0' },
+      { balance: localPreviousBalance, feeInETH: new BigNumber(0), blockNumber: 0, hash: '0', timeStamp: '0' },
     );
     // Minus Fee Operation
     // MINUS Transaction FEE from main eth balance

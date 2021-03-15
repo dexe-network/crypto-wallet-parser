@@ -55,7 +55,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                         return [4 /*yield*/, this.services.web3Service.getCurrentBlockNumberLimiter()];
                     case 1:
                         currentBlockNumber = _a.sent();
-                        return [4 /*yield*/, this.parseTransactionWallet.parseTransactionBalancePrice(this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber))];
+                        return [4 /*yield*/, this.parseTransactionWallet.parseTransactionBalancePrice(this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber), true)];
                     case 2: return [2 /*return*/, _a.sent()];
                     case 3:
                         e_1 = _a.sent();
@@ -68,7 +68,7 @@ var TradesBuilderV2 = /** @class */ (function () {
     TradesBuilderV2.prototype.generateVirtualTransactions = function (openTrades, lastGroupedTransaction, currentBlockNumber) {
         var _this = this;
         return openTrades.reduce(function (accum, value, index) {
-            var balanceBeforeTransaction = index === 0 ? lastGroupedTransaction.balance : accum[index - 1].balance;
+            var balanceBeforeTransaction = lastGroupedTransaction.balance;
             var result = {
                 normalTransactions: [],
                 internalTransactions: [],
@@ -89,7 +89,16 @@ var TradesBuilderV2 = /** @class */ (function () {
     };
     TradesBuilderV2.prototype.generateBalanceDiffForVirtualTradePnl = function (trade, balance) {
         var _a;
-        return tslib_1.__assign(tslib_1.__assign({}, balance), (_a = {}, _a[trade.tokenAddress] = {
+        return tslib_1.__assign(tslib_1.__assign({}, Object.values(balance).reduce(function (accum, value) {
+            accum[value.address] = {
+                symbol: value.symbol,
+                name: value.name,
+                address: value.address,
+                decimals: value.decimals,
+                amount: value.amount.negated().negated(),
+            };
+            return accum;
+        }, {})), (_a = {}, _a[trade.tokenAddress] = {
             symbol: balance[trade.tokenAddress].symbol,
             name: balance[trade.tokenAddress].name,
             address: balance[trade.tokenAddress].address,

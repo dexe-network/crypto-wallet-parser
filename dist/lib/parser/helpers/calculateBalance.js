@@ -63,9 +63,21 @@ var CalculateBalance = /** @class */ (function () {
             return true;
         }
     };
+    CalculateBalance.prototype.deepCloneBalance = function (balance) {
+        return Object.values(balance).reduce(function (accum, value) {
+            accum[value.address] = {
+                symbol: value.symbol,
+                name: value.name,
+                address: value.address,
+                decimals: value.decimals,
+                amount: value.amount.negated().negated(),
+            };
+            return accum;
+        }, {});
+    };
     CalculateBalance.prototype.balanceLookup = function (data, previousBalance, wallet) {
         var _this = this;
-        var localPreviousBalance = tslib_1.__assign({}, previousBalance) || {};
+        var localPreviousBalance = this.deepCloneBalance(previousBalance || {});
         var result = Object.keys(data).reduce(function (accum, value) {
             if (value === 'normalTransactions' && data[value]) {
                 _this.balanceAndFeeFromNormal(data[value], accum, wallet, data);
@@ -83,7 +95,7 @@ var CalculateBalance = /** @class */ (function () {
                 return accum;
             }
             return accum;
-        }, { balance: tslib_1.__assign({}, localPreviousBalance), feeInETH: new bignumber_js_1.default(0), blockNumber: 0, hash: '0', timeStamp: '0' });
+        }, { balance: localPreviousBalance, feeInETH: new bignumber_js_1.default(0), blockNumber: 0, hash: '0', timeStamp: '0' });
         // Minus Fee Operation
         // MINUS Transaction FEE from main eth balance
         if (result.feeInETH.isGreaterThan(0)) {

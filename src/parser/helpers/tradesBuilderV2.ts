@@ -67,6 +67,7 @@ export class TradesBuilderV2 {
       const currentBlockNumber = await this.services.web3Service.getCurrentBlockNumberLimiter();
       return await this.parseTransactionWallet.parseTransactionBalancePrice(
         this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber),
+        true,
       );
     } catch (e) {
       throw e;
@@ -79,7 +80,7 @@ export class TradesBuilderV2 {
     currentBlockNumber: number,
   ): IGroupedTransactions<ITokenBalanceItemBase>[] {
     return openTrades.reduce<IGroupedTransactions<ITokenBalanceItemBase>[]>((accum, value, index) => {
-      const balanceBeforeTransaction = index === 0 ? lastGroupedTransaction.balance : accum[index - 1].balance;
+      const balanceBeforeTransaction = lastGroupedTransaction.balance;
       const result = {
         normalTransactions: [],
         internalTransactions: [],
@@ -104,7 +105,17 @@ export class TradesBuilderV2 {
     balance: ITokenBalanceInfo<ITokenBalanceItemBase>,
   ): ITokenBalanceInfo<ITokenBalanceItemBase> {
     return {
-      ...balance,
+      // Deep clone balance
+      ...Object.values(balance).reduce((accum, value) => {
+        accum[value.address] = {
+          symbol: value.symbol,
+          name: value.name,
+          address: value.address,
+          decimals: value.decimals,
+          amount: value.amount.negated().negated(),
+        };
+        return accum;
+      }, {} as ITokenBalanceInfo<ITokenBalanceItemBase>),
       [trade.tokenAddress]: {
         symbol: balance[trade.tokenAddress].symbol,
         name: balance[trade.tokenAddress].name,

@@ -4,5 +4,5 @@ import { UniswapServiceClient } from '../../services/outgoing/uniswap/uniswap.br
 export declare class ParseTransaction {
     private uniswapService;
     constructor(uniswapService: UniswapServiceApi | UniswapServiceClient);
-    parseTransactionBalancePrice(transactions: IGroupedTransactions<ITokenBalanceItemBase>[]): Promise<IGroupedTransactions<ITokenBalanceItem>[]>;
+    parseTransactionBalancePrice(transactions: IGroupedTransactions<ITokenBalanceItemBase>[], isVirtualTransactions?: boolean): Promise<IGroupedTransactions<ITokenBalanceItem>[]>;
 }
