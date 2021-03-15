@@ -930,6 +930,7 @@
                                 .multipliedBy(buildBalanceTransformer(sellOperationAmount, +tradeEvent.tokenInfo.decimals));
                             value.balance = value.balance.minus(sellOperationAmount);
                             value.sellOperations.push({
+                                sellTransactionHash: tradeEvent.transactionHash,
                                 amount: new BigNumber__default['default'](sellOperationAmount.toString()),
                                 profit: {
                                     usd: profitUSD,
@@ -953,6 +954,7 @@
                                     .minus(value.price.withFee.eth)
                                     .multipliedBy(buildBalanceTransformer(value.balance, +tradeEvent.tokenInfo.decimals));
                                 value.sellOperations.push({
+                                    sellTransactionHash: tradeEvent.transactionHash,
                                     amount: new BigNumber__default['default'](value.balance.toString()),
                                     profit: {
                                         usd: profitUSD,

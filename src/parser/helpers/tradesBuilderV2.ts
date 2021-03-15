@@ -288,6 +288,7 @@ export class TradesBuilderV2 {
 
           value.balance = value.balance.minus(sellOperationAmount);
           value.sellOperations.push({
+            sellTransactionHash: tradeEvent.transactionHash,
             amount: new BigNumber(sellOperationAmount.toString()),
             profit: {
               usd: profitUSD,
@@ -312,6 +313,7 @@ export class TradesBuilderV2 {
               .multipliedBy(buildBalanceTransformer(value.balance, +tradeEvent.tokenInfo.decimals));
 
             value.sellOperations.push({
+              sellTransactionHash: tradeEvent.transactionHash,
               amount: new BigNumber(value.balance.toString()),
               profit: {
                 usd: profitUSD,

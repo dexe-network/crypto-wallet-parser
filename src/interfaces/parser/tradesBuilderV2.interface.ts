@@ -100,6 +100,7 @@ export interface ITradeEvent {
 }
 
 export interface ISellOperations {
+  sellTransactionHash: string;
   amount: BigNumber;
   profit: {
     usd: BigNumber;

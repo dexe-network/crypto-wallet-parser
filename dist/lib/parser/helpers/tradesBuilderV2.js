@@ -251,6 +251,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                             .multipliedBy(tokens_helper_1.buildBalanceTransformer(sellOperationAmount, +tradeEvent.tokenInfo.decimals));
                         value.balance = value.balance.minus(sellOperationAmount);
                         value.sellOperations.push({
+                            sellTransactionHash: tradeEvent.transactionHash,
                             amount: new bignumber_js_1.default(sellOperationAmount.toString()),
                             profit: {
                                 usd: profitUSD,
@@ -274,6 +275,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                                 .minus(value.price.withFee.eth)
                                 .multipliedBy(tokens_helper_1.buildBalanceTransformer(value.balance, +tradeEvent.tokenInfo.decimals));
                             value.sellOperations.push({
+                                sellTransactionHash: tradeEvent.transactionHash,
                                 amount: new bignumber_js_1.default(value.balance.toString()),
                                 profit: {
                                     usd: profitUSD,

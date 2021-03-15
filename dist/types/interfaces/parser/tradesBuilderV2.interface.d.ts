@@ -87,6 +87,7 @@ export interface ITradeEvent {
     operationInfo: IOperationTokens;
 }
 export interface ISellOperations {
+    sellTransactionHash: string;
     amount: BigNumber;
     profit: {
         usd: BigNumber;
