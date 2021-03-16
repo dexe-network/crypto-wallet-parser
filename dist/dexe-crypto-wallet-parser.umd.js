@@ -930,8 +930,10 @@
                             var profitETH = tradeEvent.price.withFee.eth
                                 .minus(value.price.withFee.eth)
                                 .multipliedBy(buildBalanceTransformer(sellOperationAmount, +tradeEvent.tokenInfo.decimals));
+                            var profitLossUSD = profitUSD.dividedBy(value.averageStartDep.usd).multipliedBy(100);
+                            var profitLossETH = profitETH.dividedBy(value.averageStartDep.eth).multipliedBy(100);
                             value.balance = value.balance.minus(sellOperationAmount);
-                            value.sellOperations.push({
+                            var operation = {
                                 sellTransactionHash: tradeEvent.transactionHash,
                                 amount: new BigNumber__default['default'](sellOperationAmount.toString()),
                                 profit: {
@@ -939,11 +941,13 @@
                                     eth: profitETH,
                                 },
                                 profitLoss: {
-                                    usd: profitUSD.dividedBy(value.averageStartDep.usd).multipliedBy(100),
-                                    eth: profitETH.dividedBy(value.averageStartDep.eth).multipliedBy(100),
+                                    usd: profitLossUSD.isFinite() ? profitLossUSD : new BigNumber__default['default'](0),
+                                    eth: profitLossETH.isFinite() ? profitLossETH : new BigNumber__default['default'](0),
                                 },
                                 tokenInfo: tradeEvent.tokenInfo,
-                            });
+                            };
+                            value.sellOperations.push(operation);
+                            tradeEvent.sellOperations.push(operation);
                             sellOperationAmount = new BigNumber__default['default'](0);
                             break;
                         }
@@ -955,7 +959,9 @@
                                 var profitETH = tradeEvent.price.withFee.eth
                                     .minus(value.price.withFee.eth)
                                     .multipliedBy(buildBalanceTransformer(value.balance, +tradeEvent.tokenInfo.decimals));
-                                value.sellOperations.push({
+                                var profitLossUSD = profitUSD.dividedBy(value.averageStartDep.usd).multipliedBy(100);
+                                var profitLossETH = profitETH.dividedBy(value.averageStartDep.eth).multipliedBy(100);
+                                var operation = {
                                     sellTransactionHash: tradeEvent.transactionHash,
                                     amount: new BigNumber__default['default'](value.balance.toString()),
                                     profit: {
@@ -963,11 +969,13 @@
                                         eth: profitETH,
                                     },
                                     profitLoss: {
-                                        usd: profitUSD.dividedBy(value.averageStartDep.usd).multipliedBy(100),
-                                        eth: profitETH.dividedBy(value.averageStartDep.eth).multipliedBy(100),
+                                        usd: profitLossUSD.isFinite() ? profitLossUSD : new BigNumber__default['default'](0),
+                                        eth: profitLossETH.isFinite() ? profitLossETH : new BigNumber__default['default'](0),
                                     },
                                     tokenInfo: tradeEvent.tokenInfo,
-                                });
+                                };
+                                value.sellOperations.push(operation);
+                                tradeEvent.sellOperations.push(operation);
                                 sellOperationAmount = sellOperationAmount.minus(value.balance);
                                 value.balance = new BigNumber__default['default'](0);
                             }

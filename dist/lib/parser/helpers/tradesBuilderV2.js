@@ -249,8 +249,10 @@ var TradesBuilderV2 = /** @class */ (function () {
                         var profitETH = tradeEvent.price.withFee.eth
                             .minus(value.price.withFee.eth)
                             .multipliedBy(tokens_helper_1.buildBalanceTransformer(sellOperationAmount, +tradeEvent.tokenInfo.decimals));
+                        var profitLossUSD = profitUSD.dividedBy(value.averageStartDep.usd).multipliedBy(100);
+                        var profitLossETH = profitETH.dividedBy(value.averageStartDep.eth).multipliedBy(100);
                         value.balance = value.balance.minus(sellOperationAmount);
-                        value.sellOperations.push({
+                        var operation = {
                             sellTransactionHash: tradeEvent.transactionHash,
                             amount: new bignumber_js_1.default(sellOperationAmount.toString()),
                             profit: {
@@ -258,11 +260,13 @@ var TradesBuilderV2 = /** @class */ (function () {
                                 eth: profitETH,
                             },
                             profitLoss: {
-                                usd: profitUSD.dividedBy(value.averageStartDep.usd).multipliedBy(100),
-                                eth: profitETH.dividedBy(value.averageStartDep.eth).multipliedBy(100),
+                                usd: profitLossUSD.isFinite() ? profitLossUSD : new bignumber_js_1.default(0),
+                                eth: profitLossETH.isFinite() ? profitLossETH : new bignumber_js_1.default(0),
                             },
                             tokenInfo: tradeEvent.tokenInfo,
-                        });
+                        };
+                        value.sellOperations.push(operation);
+                        tradeEvent.sellOperations.push(operation);
                         sellOperationAmount = new bignumber_js_1.default(0);
                         break;
                     }
@@ -274,7 +278,9 @@ var TradesBuilderV2 = /** @class */ (function () {
                             var profitETH = tradeEvent.price.withFee.eth
                                 .minus(value.price.withFee.eth)
                                 .multipliedBy(tokens_helper_1.buildBalanceTransformer(value.balance, +tradeEvent.tokenInfo.decimals));
-                            value.sellOperations.push({
+                            var profitLossUSD = profitUSD.dividedBy(value.averageStartDep.usd).multipliedBy(100);
+                            var profitLossETH = profitETH.dividedBy(value.averageStartDep.eth).multipliedBy(100);
+                            var operation = {
                                 sellTransactionHash: tradeEvent.transactionHash,
                                 amount: new bignumber_js_1.default(value.balance.toString()),
                                 profit: {
@@ -282,11 +288,13 @@ var TradesBuilderV2 = /** @class */ (function () {
                                     eth: profitETH,
                                 },
                                 profitLoss: {
-                                    usd: profitUSD.dividedBy(value.averageStartDep.usd).multipliedBy(100),
-                                    eth: profitETH.dividedBy(value.averageStartDep.eth).multipliedBy(100),
+                                    usd: profitLossUSD.isFinite() ? profitLossUSD : new bignumber_js_1.default(0),
+                                    eth: profitLossETH.isFinite() ? profitLossETH : new bignumber_js_1.default(0),
                                 },
                                 tokenInfo: tradeEvent.tokenInfo,
-                            });
+                            };
+                            value.sellOperations.push(operation);
+                            tradeEvent.sellOperations.push(operation);
                             sellOperationAmount = sellOperationAmount.minus(value.balance);
                             value.balance = new bignumber_js_1.default(0);
                         }
