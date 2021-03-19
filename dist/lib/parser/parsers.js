@@ -10,12 +10,14 @@ var tradesBuilderV2_1 = require("./helpers/tradesBuilderV2");
 var calculateBalance_1 = require("./helpers/calculateBalance");
 var calculateTransaction_1 = require("./helpers/calculateTransaction");
 var rxjs_1 = require("rxjs");
+var operators_1 = require("rxjs/operators");
 var ParserBase = /** @class */ (function () {
     function ParserBase(services, config) {
         this.services = services;
         this.config = config;
         this.rawTransactions = [];
         this.parserProgress = new rxjs_1.BehaviorSubject(0);
+        this.uniswapRequestCount = this.services.uniswapService.requestCounter.asObservable().pipe(operators_1.auditTime(1000));
         this.getTransaction = new getTransaction_1.GetTransaction(this.services.etherscanService);
         this.parseTransaction = new parseTransaction_1.ParseTransaction(this.services.uniswapService);
         this.filterTransaction = new filterTransaction_1.FilterTransaction();
@@ -42,6 +44,7 @@ var ParserBase = /** @class */ (function () {
                     case 2:
                         e_1 = _a.sent();
                         this.parserProgress.complete();
+                        this.services.uniswapService.requestCounter.complete();
                         console.log('🔥 error: %o', e_1);
                         throw e_1;
                     case 3: return [2 /*return*/];
@@ -50,12 +53,13 @@ var ParserBase = /** @class */ (function () {
         });
     };
     ParserBase.prototype.process = function () {
+        var _a;
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var rawTransactions, transactionStep1, transactionStep2, transactionStep3, currentDeposit, startDeposit, lastTransactionBlockNumber, transactionsCount, tradesCount, totalIndicators, totalPoints, e_2;
-            return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
+            return tslib_1.__generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        _a.trys.push([0, 3, , 4]);
+                        _b.trys.push([0, 3, , 4]);
                         rawTransactions = this.rawTransactions;
                         if (!rawTransactions) {
                             throw new Error('Etherscan transaction download error');
@@ -64,21 +68,22 @@ var ParserBase = /** @class */ (function () {
                         this.parserProgress.next(85);
                         return [4 /*yield*/, this.parseTransaction.parseTransactionBalancePrice(rawTransactions)];
                     case 1:
-                        transactionStep1 = _a.sent();
+                        transactionStep1 = _b.sent();
                         // set progress
                         this.parserProgress.next(98);
                         return [4 /*yield*/, this.tradesBuilderV2.buildTrades(transactionStep1)];
                     case 2:
-                        transactionStep2 = _a.sent();
+                        transactionStep2 = _b.sent();
                         transactionStep3 = this.transformTransaction.transformTokenTradeObjectToArr(transactionStep2);
                         currentDeposit = this.calculateTransaction.getCurrentWalletBalance(transactionStep1[transactionStep1.length - 1]);
                         startDeposit = this.calculateTransaction.getCurrentWalletBalance(transactionStep1[0]);
-                        lastTransactionBlockNumber = transactionStep1[transactionStep1.length - 1].blockNumber;
+                        lastTransactionBlockNumber = ((_a = transactionStep1[transactionStep1.length - 1]) === null || _a === void 0 ? void 0 : _a.blockNumber) || 0;
                         transactionsCount = rawTransactions.length;
                         tradesCount = this.calculateTransaction.tradesCount(transactionStep3);
                         totalIndicators = this.calculateTransaction.totalProfitLoss(transactionStep3);
                         totalPoints = this.calculateTransaction.totalPoints(transactionStep3);
                         this.parserProgress.complete();
+                        this.services.uniswapService.requestCounter.complete();
                         return [2 /*return*/, {
                                 points: totalPoints,
                                 currentDeposit: currentDeposit,
@@ -90,8 +95,9 @@ var ParserBase = /** @class */ (function () {
                                 trades: transactionStep3,
                             }];
                     case 3:
-                        e_2 = _a.sent();
+                        e_2 = _b.sent();
                         this.parserProgress.complete();
+                        this.services.uniswapService.requestCounter.complete();
                         console.log('🔥 error: %o', e_2);
                         throw e_2;
                     case 4: return [2 /*return*/];

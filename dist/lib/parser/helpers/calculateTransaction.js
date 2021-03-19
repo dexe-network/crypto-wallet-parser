@@ -79,7 +79,7 @@ var CalculateTransaction = /** @class */ (function () {
         }, 0);
     };
     CalculateTransaction.prototype.getCurrentWalletBalance = function (data) {
-        return Object.values(data.balance).reduce(function (accum, currentValue) {
+        return Object.values(((data === null || data === void 0 ? void 0 : data.balance) || [])).reduce(function (accum, currentValue) {
             accum['amountInETH'] = accum['amountInETH'].plus(currentValue.amountInETH);
             accum['amountInUSD'] = accum['amountInUSD'].plus(currentValue.amountInUSD);
             return accum;

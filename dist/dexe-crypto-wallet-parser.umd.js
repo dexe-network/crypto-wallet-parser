@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('web3'), require('bottleneck'), require('lodash'), require('bignumber.js'), require('moment'), require('rxjs'), require('graphql-request'), require('ioredis'), require('shorthash2'), require('axios'), require('qs')) :
-    typeof define === 'function' && define.amd ? define(['exports', 'web3', 'bottleneck', 'lodash', 'bignumber.js', 'moment', 'rxjs', 'graphql-request', 'ioredis', 'shorthash2', 'axios', 'qs'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.dexeCryptoWalletParser = {}, global.Web3, global.Bottleneck, global.lodash, global.BigNumber, global.moment, global.rxjs, global.graphqlRequest, global.IORedis, global.shortHash, global.Axios, global.qs));
-}(this, (function (exports, Web3, Bottleneck, lodash, BigNumber, moment, rxjs, graphqlRequest, IORedis, shortHash, Axios, qs) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('web3'), require('bottleneck'), require('lodash'), require('bignumber.js'), require('moment'), require('rxjs'), require('rxjs/operators'), require('graphql-request'), require('ioredis'), require('shorthash2'), require('axios'), require('qs')) :
+    typeof define === 'function' && define.amd ? define(['exports', 'web3', 'bottleneck', 'lodash', 'bignumber.js', 'moment', 'rxjs', 'rxjs/operators', 'graphql-request', 'ioredis', 'shorthash2', 'axios', 'qs'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.dexeCryptoWalletParser = {}, global.Web3, global.Bottleneck, global.lodash, global.BigNumber, global.moment, global.rxjs, global.operators, global.graphqlRequest, global.IORedis, global.shortHash, global.Axios, global.qs));
+}(this, (function (exports, Web3, Bottleneck, lodash, BigNumber, moment, rxjs, operators, graphqlRequest, IORedis, shortHash, Axios, qs) { 'use strict';
 
     function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -631,7 +631,7 @@
             }, 0);
         };
         CalculateTransaction.prototype.getCurrentWalletBalance = function (data) {
-            return Object.values(data.balance).reduce(function (accum, currentValue) {
+            return Object.values(((data === null || data === void 0 ? void 0 : data.balance) || [])).reduce(function (accum, currentValue) {
                 accum['amountInETH'] = accum['amountInETH'].plus(currentValue.amountInETH);
                 accum['amountInUSD'] = accum['amountInUSD'].plus(currentValue.amountInUSD);
                 return accum;
@@ -792,7 +792,7 @@
             return __awaiter(this, void 0, void 0, function () {
                 var _this = this;
                 return __generator(this, function (_a) {
-                    console.log('behaviourIterator', data.length);
+                    // console.log('behaviourIterator', data.length);
                     return [2 /*return*/, data.reduce(function (accumulatorValuePromise, currentItem, index) { return __awaiter(_this, void 0, void 0, function () {
                             var accumulatorValue, state, _a, _b, operation, _c, _d, operation;
                             var e_2, _e, e_3, _f;
@@ -1252,7 +1252,7 @@
         };
         TradesBuilderV2.prototype.balanceDifferences = function (currentBalance, beforeBalance, parsedFeeInETH) {
             var e_6, _a;
-            var _b, _c, _d;
+            var _b, _c, _d, _e;
             var tokensAddress = lodash__default['default'].uniq(__spreadArray(__spreadArray([], __read(Object.keys(currentBalance))), __read(Object.keys(beforeBalance))));
             var diffs = [];
             var operationInfo = {
@@ -1262,13 +1262,14 @@
             try {
                 for (var tokensAddress_1 = __values(tokensAddress), tokensAddress_1_1 = tokensAddress_1.next(); !tokensAddress_1_1.done; tokensAddress_1_1 = tokensAddress_1.next()) {
                     var key = tokensAddress_1_1.value;
-                    if (!(currentBalance[key].amount.toString() === ((_c = (_b = beforeBalance[key]) === null || _b === void 0 ? void 0 : _b.amount) === null || _c === void 0 ? void 0 : _c.toString()))) {
+                    if (((_b = currentBalance[key]) === null || _b === void 0 ? void 0 : _b.amount) &&
+                        !(currentBalance[key].amount.toString() === ((_d = (_c = beforeBalance[key]) === null || _c === void 0 ? void 0 : _c.amount) === null || _d === void 0 ? void 0 : _d.toString()))) {
                         var item = {
                             symbol: currentBalance[key].symbol,
                             name: currentBalance[key].name,
                             address: currentBalance[key].address.toLowerCase(),
                             decimals: currentBalance[key].decimals,
-                            amount: ((_d = beforeBalance[key]) === null || _d === void 0 ? void 0 : _d.amount)
+                            amount: ((_e = beforeBalance[key]) === null || _e === void 0 ? void 0 : _e.amount)
                                 ? currentBalance[key].amount.minus(beforeBalance[key].amount)
                                 : new BigNumber__default['default'](currentBalance[key].amount.toString()),
                         };
@@ -1572,6 +1573,7 @@
             this.config = config;
             this.rawTransactions = [];
             this.parserProgress = new rxjs.BehaviorSubject(0);
+            this.uniswapRequestCount = this.services.uniswapService.requestCounter.asObservable().pipe(operators.auditTime(1000));
             this.getTransaction = new GetTransaction(this.services.etherscanService);
             this.parseTransaction = new ParseTransaction(this.services.uniswapService);
             this.filterTransaction = new FilterTransaction();
@@ -1598,6 +1600,7 @@
                         case 2:
                             e_1 = _a.sent();
                             this.parserProgress.complete();
+                            this.services.uniswapService.requestCounter.complete();
                             console.log('🔥 error: %o', e_1);
                             throw e_1;
                         case 3: return [2 /*return*/];
@@ -1606,12 +1609,13 @@
             });
         };
         ParserBase.prototype.process = function () {
+            var _a;
             return __awaiter(this, void 0, void 0, function () {
                 var rawTransactions, transactionStep1, transactionStep2, transactionStep3, currentDeposit, startDeposit, lastTransactionBlockNumber, transactionsCount, tradesCount, totalIndicators, totalPoints, e_2;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
                         case 0:
-                            _a.trys.push([0, 3, , 4]);
+                            _b.trys.push([0, 3, , 4]);
                             rawTransactions = this.rawTransactions;
                             if (!rawTransactions) {
                                 throw new Error('Etherscan transaction download error');
@@ -1620,21 +1624,22 @@
                             this.parserProgress.next(85);
                             return [4 /*yield*/, this.parseTransaction.parseTransactionBalancePrice(rawTransactions)];
                         case 1:
-                            transactionStep1 = _a.sent();
+                            transactionStep1 = _b.sent();
                             // set progress
                             this.parserProgress.next(98);
                             return [4 /*yield*/, this.tradesBuilderV2.buildTrades(transactionStep1)];
                         case 2:
-                            transactionStep2 = _a.sent();
+                            transactionStep2 = _b.sent();
                             transactionStep3 = this.transformTransaction.transformTokenTradeObjectToArr(transactionStep2);
                             currentDeposit = this.calculateTransaction.getCurrentWalletBalance(transactionStep1[transactionStep1.length - 1]);
                             startDeposit = this.calculateTransaction.getCurrentWalletBalance(transactionStep1[0]);
-                            lastTransactionBlockNumber = transactionStep1[transactionStep1.length - 1].blockNumber;
+                            lastTransactionBlockNumber = ((_a = transactionStep1[transactionStep1.length - 1]) === null || _a === void 0 ? void 0 : _a.blockNumber) || 0;
                             transactionsCount = rawTransactions.length;
                             tradesCount = this.calculateTransaction.tradesCount(transactionStep3);
                             totalIndicators = this.calculateTransaction.totalProfitLoss(transactionStep3);
                             totalPoints = this.calculateTransaction.totalPoints(transactionStep3);
                             this.parserProgress.complete();
+                            this.services.uniswapService.requestCounter.complete();
                             return [2 /*return*/, {
                                     points: totalPoints,
                                     currentDeposit: currentDeposit,
@@ -1646,8 +1651,9 @@
                                     trades: transactionStep3,
                                 }];
                         case 3:
-                            e_2 = _a.sent();
+                            e_2 = _b.sent();
                             this.parserProgress.complete();
+                            this.services.uniswapService.requestCounter.complete();
                             console.log('🔥 error: %o', e_2);
                             throw e_2;
                         case 4: return [2 /*return*/];
@@ -1756,6 +1762,7 @@
 
     var UniswapServiceBase = /** @class */ (function () {
         function UniswapServiceBase() {
+            this.requestCounter = new rxjs.BehaviorSubject(0);
         }
         UniswapServiceBase.prototype.checkTokenPriceInUSDandETHLimiter = function (token, blockNumber) {
             var _this = this;
@@ -1777,7 +1784,7 @@
         };
         UniswapServiceBase.prototype.checkTokenArrPriceInUSDandETH = function (argumentsData) {
             return __awaiter(this, void 0, void 0, function () {
-                var PAIR_SEARCH, tokensArrs, totalResult_1, tokensArrs_1, tokensArrs_1_1, tokens, count, maxTries, _loop_1, state_1, e_1_1, dataResult, e_2;
+                var PAIR_SEARCH, tokensArrs, totalResult_1, tokensArrs_1, tokensArrs_1_1, tokens, count, maxTries, _loop_1, this_1, state_1, e_1_1, dataResult, e_2;
                 var e_1, _a;
                 var _this = this;
                 return __generator(this, function (_b) {
@@ -1830,6 +1837,7 @@
                                         case 2:
                                             result = _h.sent();
                                             clearTimeout(requestTimeLimit);
+                                            this_1.requestCounter.next(this_1.requestCounter.value + 1);
                                             (_c = totalResult_1.ethPrice).push.apply(_c, __spreadArray([], __read(result.ethPrice)));
                                             (_d = totalResult_1.usdc0).push.apply(_d, __spreadArray([], __read(result.usdc0)));
                                             (_e = totalResult_1.usdc1).push.apply(_e, __spreadArray([], __read(result.usdc1)));
@@ -1839,7 +1847,7 @@
                                         case 3:
                                             e_3 = _h.sent();
                                             clearTimeout(requestTimeLimit);
-                                            console.log('retry');
+                                            console.log('retry price request');
                                             if (++count === maxTries) {
                                                 throw e_3;
                                             }
@@ -1848,6 +1856,7 @@
                                     }
                                 });
                             };
+                            this_1 = this;
                             _b.label = 3;
                         case 3:
                             return [5 /*yield**/, _loop_1()];
@@ -1911,6 +1920,7 @@
                             return [4 /*yield*/, this.clientGQ.request(PAIR_SEARCH, variables)];
                         case 3:
                             result = _s.sent();
+                            this.requestCounter.next(this.requestCounter.value + 1);
                             // Catch WETH and ETH price check
                             if (token.toLowerCase() === ethDefaultInfo.address || token.toLowerCase() === wethDefaultInfo.address) {
                                 return [2 /*return*/, {
@@ -1954,7 +1964,7 @@
                                 }];
                         case 4:
                             e_4 = _s.sent();
-                            console.log('retry');
+                            console.log('retry price request');
                             if (++count === maxTries) {
                                 throw e_4;
                             }
@@ -1968,11 +1978,13 @@
         UniswapServiceBase.prototype.getUniswapTransactionById = function (transactionId, blockNumber) {
             return __awaiter(this, void 0, void 0, function () {
                 var query;
+                var _this = this;
                 return __generator(this, function (_a) {
                     try {
                         query = graphqlRequest.gql(templateObject_2 || (templateObject_2 = __makeTemplateObject(["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "], ["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "])), transactionId, blockNumber);
                         return [2 /*return*/, this.clientGQ.request(query).then(function (res) {
                                 var _a;
+                                _this.requestCounter.next(_this.requestCounter.value + 1);
                                 if (!res.swaps[0]) {
                                     return undefined;
                                 }

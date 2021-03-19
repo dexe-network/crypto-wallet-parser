@@ -104,7 +104,7 @@ export class CalculateTransaction {
   }
 
   public getCurrentWalletBalance(data: IGroupedTransactions<ITokenBalanceItem>): IGetCurrentWalletBalanceResult {
-    return Object.values(data.balance).reduce(
+    return Object.values((data?.balance || [])).reduce(
       (accum, currentValue) => {
         accum['amountInETH'] = accum['amountInETH'].plus(currentValue.amountInETH);
         accum['amountInUSD'] = accum['amountInUSD'].plus(currentValue.amountInUSD);

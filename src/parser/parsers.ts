@@ -15,11 +15,13 @@ import { TradesBuilderV2 } from './helpers/tradesBuilderV2';
 import { CalculateBalance } from './helpers/calculateBalance';
 import { CalculateTransaction } from './helpers/calculateTransaction';
 import { BehaviorSubject } from 'rxjs';
+import { auditTime } from 'rxjs/operators';
 
 export abstract class ParserBase<ConfigType> {
   public rawTransactions: IGroupedTransactions<ITokenBalanceItemBase>[] = [];
 
   public parserProgress = new BehaviorSubject(0);
+  public uniswapRequestCount = this.services.uniswapService.requestCounter.asObservable().pipe(auditTime(1000));
 
   protected getTransaction = new GetTransaction(this.services.etherscanService);
   protected parseTransaction = new ParseTransaction(this.services.uniswapService);
@@ -40,6 +42,7 @@ export abstract class ParserBase<ConfigType> {
       this.rawTransactions = initStep2;
     } catch (e) {
       this.parserProgress.complete();
+      this.services.uniswapService.requestCounter.complete();
       console.log('🔥 error: %o', e);
       throw e;
     }
@@ -68,7 +71,7 @@ export abstract class ParserBase<ConfigType> {
         transactionStep1[0],
       );
 
-      const lastTransactionBlockNumber = transactionStep1[transactionStep1.length - 1].blockNumber;
+      const lastTransactionBlockNumber = transactionStep1[transactionStep1.length - 1]?.blockNumber || 0;
 
       const transactionsCount = rawTransactions.length;
       const tradesCount = this.calculateTransaction.tradesCount(transactionStep3);
@@ -76,6 +79,7 @@ export abstract class ParserBase<ConfigType> {
       const totalPoints = this.calculateTransaction.totalPoints(transactionStep3);
 
       this.parserProgress.complete();
+      this.services.uniswapService.requestCounter.complete();
 
       return {
         points: totalPoints,
@@ -89,6 +93,7 @@ export abstract class ParserBase<ConfigType> {
       };
     } catch (e) {
       this.parserProgress.complete();
+      this.services.uniswapService.requestCounter.complete();
       console.log('🔥 error: %o', e);
       throw e;
     }

@@ -111,7 +111,7 @@ var TradesBuilderV2 = /** @class */ (function () {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var _this = this;
             return tslib_1.__generator(this, function (_a) {
-                console.log('behaviourIterator', data.length);
+                // console.log('behaviourIterator', data.length);
                 return [2 /*return*/, data.reduce(function (accumulatorValuePromise, currentItem, index) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
                         var accumulatorValue, state, _a, _b, operation, _c, _d, operation;
                         var e_2, _e, e_3, _f;
@@ -571,7 +571,7 @@ var TradesBuilderV2 = /** @class */ (function () {
     };
     TradesBuilderV2.prototype.balanceDifferences = function (currentBalance, beforeBalance, parsedFeeInETH) {
         var e_6, _a;
-        var _b, _c, _d;
+        var _b, _c, _d, _e;
         var tokensAddress = lodash_1.default.uniq(tslib_1.__spreadArray(tslib_1.__spreadArray([], tslib_1.__read(Object.keys(currentBalance))), tslib_1.__read(Object.keys(beforeBalance))));
         var diffs = [];
         var operationInfo = {
@@ -581,13 +581,14 @@ var TradesBuilderV2 = /** @class */ (function () {
         try {
             for (var tokensAddress_1 = tslib_1.__values(tokensAddress), tokensAddress_1_1 = tokensAddress_1.next(); !tokensAddress_1_1.done; tokensAddress_1_1 = tokensAddress_1.next()) {
                 var key = tokensAddress_1_1.value;
-                if (!(currentBalance[key].amount.toString() === ((_c = (_b = beforeBalance[key]) === null || _b === void 0 ? void 0 : _b.amount) === null || _c === void 0 ? void 0 : _c.toString()))) {
+                if (((_b = currentBalance[key]) === null || _b === void 0 ? void 0 : _b.amount) &&
+                    !(currentBalance[key].amount.toString() === ((_d = (_c = beforeBalance[key]) === null || _c === void 0 ? void 0 : _c.amount) === null || _d === void 0 ? void 0 : _d.toString()))) {
                     var item = {
                         symbol: currentBalance[key].symbol,
                         name: currentBalance[key].name,
                         address: currentBalance[key].address.toLowerCase(),
                         decimals: currentBalance[key].decimals,
-                        amount: ((_d = beforeBalance[key]) === null || _d === void 0 ? void 0 : _d.amount)
+                        amount: ((_e = beforeBalance[key]) === null || _e === void 0 ? void 0 : _e.amount)
                             ? currentBalance[key].amount.minus(beforeBalance[key].amount)
                             : new bignumber_js_1.default(currentBalance[key].amount.toString()),
                     };

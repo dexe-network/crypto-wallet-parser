@@ -130,7 +130,7 @@ export class TradesBuilderV2 {
     data: IGroupedTransactions<ITokenBalanceItem>[],
     initValue = {},
   ): Promise<ITradeIterateObject> {
-    console.log('behaviourIterator', data.length);
+    // console.log('behaviourIterator', data.length);
     return data.reduce<Promise<ITradeIterateObject>>(async (accumulatorValuePromise, currentItem, index) => {
       const accumulatorValue = await accumulatorValuePromise;
       // Catch and Skip Error transaction
@@ -716,7 +716,10 @@ export class TradesBuilderV2 {
       received: [],
     };
     for (const key of tokensAddress) {
-      if (!(currentBalance[key].amount.toString() === beforeBalance[key]?.amount?.toString())) {
+      if (
+        currentBalance[key]?.amount &&
+        !(currentBalance[key].amount.toString() === beforeBalance[key]?.amount?.toString())
+      ) {
         const item = {
           symbol: currentBalance[key].symbol,
           name: currentBalance[key].name,

@@ -16,11 +16,14 @@ import {
 import { IParserClientConfig } from '../../../interfaces';
 import { chunk } from 'lodash';
 import defaultConfig from '../../../constants/defaultConfig';
+import { BehaviorSubject } from 'rxjs';
 
 export abstract class UniswapServiceBase {
   protected abstract limiter: Bottleneck;
   protected abstract clientGQ: GraphQLClient;
   protected abstract config: IParserClientConfig;
+
+  public requestCounter = new BehaviorSubject(0);
 
   public checkTokenPriceInUSDandETHLimiter(token: string, blockNumber?: number): Promise<ITokenPriceUSDETH> {
     return this.limiter.schedule<ITokenPriceUSDETH>(() => this.checkTokenPriceInUSDandETH(token, blockNumber));
@@ -129,6 +132,7 @@ export abstract class UniswapServiceBase {
           try {
             const result: ICheckTokenArrPriceInUSDandETHResponse = await localClientGQ.request(PAIR_SEARCH, variables);
             clearTimeout(requestTimeLimit);
+            this.requestCounter.next(this.requestCounter.value + 1);
 
             totalResult.ethPrice.push(...result.ethPrice);
             totalResult.usdc0.push(...result.usdc0);
@@ -138,7 +142,7 @@ export abstract class UniswapServiceBase {
             break;
           } catch (e) {
             clearTimeout(requestTimeLimit);
-            console.log('retry');
+            console.log('retry price request');
             if (++count === maxTries) {
               throw e;
             }
@@ -180,6 +184,7 @@ export abstract class UniswapServiceBase {
         // }
 
         const result = await this.clientGQ.request(PAIR_SEARCH, variables);
+        this.requestCounter.next(this.requestCounter.value + 1);
 
         // Catch WETH and ETH price check
         if (token.toLowerCase() === ethDefaultInfo.address || token.toLowerCase() === wethDefaultInfo.address) {
@@ -232,7 +237,7 @@ export abstract class UniswapServiceBase {
           usdPer1ETH: new BigNumber(result.ethPrice[0].ethPrice),
         };
       } catch (e) {
-        console.log('retry');
+        console.log('retry price request');
         if (++count === maxTries) {
           throw e;
         }
@@ -298,6 +303,7 @@ export abstract class UniswapServiceBase {
       }
     `;
       return this.clientGQ.request<any>(query).then<IUniswapRawTransaction>((res) => {
+        this.requestCounter.next(this.requestCounter.value + 1);
         if (!res.swaps[0]) {
           return undefined;
         }

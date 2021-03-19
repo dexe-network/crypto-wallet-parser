@@ -12,6 +12,7 @@ export declare abstract class ParserBase<ConfigType> {
     protected config: IParserClientConfig;
     rawTransactions: IGroupedTransactions<ITokenBalanceItemBase>[];
     parserProgress: BehaviorSubject<number>;
+    uniswapRequestCount: import("rxjs").Observable<number>;
     protected getTransaction: GetTransaction;
     protected parseTransaction: ParseTransaction;
     protected filterTransaction: FilterTransaction;

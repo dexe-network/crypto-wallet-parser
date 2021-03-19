@@ -8,8 +8,10 @@ var tokenInfo_1 = require("../../../constants/tokenInfo");
 var uniswap_gqlRequests_1 = require("./uniswap.gqlRequests");
 var lodash_1 = require("lodash");
 var defaultConfig_1 = require("../../../constants/defaultConfig");
+var rxjs_1 = require("rxjs");
 var UniswapServiceBase = /** @class */ (function () {
     function UniswapServiceBase() {
+        this.requestCounter = new rxjs_1.BehaviorSubject(0);
     }
     UniswapServiceBase.prototype.checkTokenPriceInUSDandETHLimiter = function (token, blockNumber) {
         var _this = this;
@@ -31,7 +33,7 @@ var UniswapServiceBase = /** @class */ (function () {
     };
     UniswapServiceBase.prototype.checkTokenArrPriceInUSDandETH = function (argumentsData) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var PAIR_SEARCH, tokensArrs, totalResult_1, tokensArrs_1, tokensArrs_1_1, tokens, count, maxTries, _loop_1, state_1, e_1_1, dataResult, e_2;
+            var PAIR_SEARCH, tokensArrs, totalResult_1, tokensArrs_1, tokensArrs_1_1, tokens, count, maxTries, _loop_1, this_1, state_1, e_1_1, dataResult, e_2;
             var e_1, _a;
             var _this = this;
             return tslib_1.__generator(this, function (_b) {
@@ -84,6 +86,7 @@ var UniswapServiceBase = /** @class */ (function () {
                                     case 2:
                                         result = _h.sent();
                                         clearTimeout(requestTimeLimit);
+                                        this_1.requestCounter.next(this_1.requestCounter.value + 1);
                                         (_c = totalResult_1.ethPrice).push.apply(_c, tslib_1.__spreadArray([], tslib_1.__read(result.ethPrice)));
                                         (_d = totalResult_1.usdc0).push.apply(_d, tslib_1.__spreadArray([], tslib_1.__read(result.usdc0)));
                                         (_e = totalResult_1.usdc1).push.apply(_e, tslib_1.__spreadArray([], tslib_1.__read(result.usdc1)));
@@ -93,7 +96,7 @@ var UniswapServiceBase = /** @class */ (function () {
                                     case 3:
                                         e_3 = _h.sent();
                                         clearTimeout(requestTimeLimit);
-                                        console.log('retry');
+                                        console.log('retry price request');
                                         if (++count === maxTries) {
                                             throw e_3;
                                         }
@@ -102,6 +105,7 @@ var UniswapServiceBase = /** @class */ (function () {
                                 }
                             });
                         };
+                        this_1 = this;
                         _b.label = 3;
                     case 3:
                         if (!true) return [3 /*break*/, 5];
@@ -167,6 +171,7 @@ var UniswapServiceBase = /** @class */ (function () {
                         return [4 /*yield*/, this.clientGQ.request(PAIR_SEARCH, variables)];
                     case 3:
                         result = _s.sent();
+                        this.requestCounter.next(this.requestCounter.value + 1);
                         // Catch WETH and ETH price check
                         if (token.toLowerCase() === tokenInfo_1.ethDefaultInfo.address || token.toLowerCase() === tokenInfo_1.wethDefaultInfo.address) {
                             return [2 /*return*/, {
@@ -210,7 +215,7 @@ var UniswapServiceBase = /** @class */ (function () {
                             }];
                     case 4:
                         e_4 = _s.sent();
-                        console.log('retry');
+                        console.log('retry price request');
                         if (++count === maxTries) {
                             throw e_4;
                         }
@@ -224,11 +229,13 @@ var UniswapServiceBase = /** @class */ (function () {
     UniswapServiceBase.prototype.getUniswapTransactionById = function (transactionId, blockNumber) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var query;
+            var _this = this;
             return tslib_1.__generator(this, function (_a) {
                 try {
                     query = graphql_request_1.gql(templateObject_2 || (templateObject_2 = tslib_1.__makeTemplateObject(["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "], ["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "])), transactionId, blockNumber);
                     return [2 /*return*/, this.clientGQ.request(query).then(function (res) {
                             var _a;
+                            _this.requestCounter.next(_this.requestCounter.value + 1);
                             if (!res.swaps[0]) {
                                 return undefined;
                             }
