@@ -2218,6 +2218,7 @@
         function EtherscanServiceApi(config) {
             var _this = _super.call(this) || this;
             _this.config = config;
+            _this.initNetwork(config);
             _this.redis = new IORedis__default['default'](_this.config.env.bottleneckRedisURL);
             var connection = new Bottleneck__default['default'].IORedisConnection({ client: _this.redis });
             _this.limiter = new Bottleneck__default['default']({
@@ -2230,6 +2231,14 @@
             });
             return _this;
         }
+        EtherscanServiceApi.prototype.initNetwork = function (config) {
+            if (config.env.network in exports.NETWORK_TYPE) {
+                this.network = config.env.network;
+            }
+            else {
+                throw new Error('Wrong network');
+            }
+        };
         return EtherscanServiceApi;
     }(EtherscanService));
 

@@ -2213,6 +2213,7 @@ var EtherscanServiceApi = /** @class */ (function (_super) {
     function EtherscanServiceApi(config) {
         var _this = _super.call(this) || this;
         _this.config = config;
+        _this.initNetwork(config);
         _this.redis = new IORedis(_this.config.env.bottleneckRedisURL);
         var connection = new Bottleneck.IORedisConnection({ client: _this.redis });
         _this.limiter = new Bottleneck({
@@ -2225,6 +2226,14 @@ var EtherscanServiceApi = /** @class */ (function (_super) {
         });
         return _this;
     }
+    EtherscanServiceApi.prototype.initNetwork = function (config) {
+        if (config.env.network in NETWORK_TYPE) {
+            this.network = config.env.network;
+        }
+        else {
+            throw new Error('Wrong network');
+        }
+    };
     return EtherscanServiceApi;
 }(EtherscanService));
 
