@@ -9,14 +9,22 @@ export enum PARSER_MODE {
   W2W,
 }
 
+export enum NETWORK_TYPE {
+  ETH = "ETH",
+  BNB = "BNB"
+}
+
 export interface IParserClientConfig {
   parserMode: PARSER_MODE;
   correctWallet: string;
+
   env: {
     infuraProjectId: string;
-    etherscanApiKey: string;
+    explorerApiKey: string;
+    network: NETWORK_TYPE;
   };
 }
+
 export interface IParserApiConfig {
   parserMode: PARSER_MODE;
   correctWallet: string;
@@ -26,7 +34,8 @@ export interface IParserApiConfig {
     infuraProjectId: string;
     bottleneckRedisURL: string;
     uniswapCacheRedisURL: string;
-    etherscanApiKey: string;
+    explorerApiKey: string;
+    network: NETWORK_TYPE;
   };
 }
 

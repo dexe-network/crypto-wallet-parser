@@ -26,6 +26,11 @@ var PARSER_MODE;
     PARSER_MODE[PARSER_MODE["Wallet"] = 0] = "Wallet";
     PARSER_MODE[PARSER_MODE["W2W"] = 1] = "W2W";
 })(PARSER_MODE || (PARSER_MODE = {}));
+var NETWORK_TYPE;
+(function (NETWORK_TYPE) {
+    NETWORK_TYPE["ETH"] = "ETH";
+    NETWORK_TYPE["BNB"] = "BNB";
+})(NETWORK_TYPE || (NETWORK_TYPE = {}));
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -147,14 +152,22 @@ function __makeTemplateObject(cooked, raw) {
     return cooked;
 }
 
-var defaultConfig = {
-    uniswap: {
-        uniswapRouterAddress: '0x7a250d5630b4cf539739df2c5dacb4c659f2488d',
-        uniswapGQLEndpointUrl: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
+var _a;
+var defaultConfig = (_a = {
+        uniswap: {
+            uniswapRouterAddress: '0x7a250d5630b4cf539739df2c5dacb4c659f2488d',
+            uniswapGQLEndpointUrl: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
+            // uniswapGQLEndpointUrl: 'https://api.bscgraph.org/subgraphs/name/cakeswap/graphql',
+        }
     },
-    etherscanApiUrl: 'https://api.etherscan.io/api?module=',
-    infuraUrl: 'https://mainnet.infura.io/v3',
-};
+    _a[NETWORK_TYPE.ETH] = {
+        apiUrl: 'https://api.etherscan.io/api?module=',
+    },
+    _a[NETWORK_TYPE.BNB] = {
+        apiUrl: 'https://api.bscscan.com/api?module=',
+    },
+    _a.infuraUrl = 'https://mainnet.infura.io/v3',
+    _a);
 
 var Web3Service = /** @class */ (function () {
     function Web3Service(config) {
@@ -1650,6 +1663,30 @@ var ParserBase = /** @class */ (function () {
             });
         });
     };
+    ParserBase.prototype.searchWallet = function (address) {
+        return __awaiter(this, void 0, void 0, function () {
+            var correctWallet, initStep1, initStep2, e_3;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        correctWallet = address.toLowerCase();
+                        return [4 /*yield*/, this.getTransaction.getAllTransactionByWalletAddress(correctWallet)];
+                    case 1:
+                        initStep1 = _a.sent();
+                        initStep2 = this.calculateBalance.buildBalance(initStep1, correctWallet);
+                        if (initStep2.length <= 0) {
+                            return [2 /*return*/, undefined];
+                        }
+                        return [2 /*return*/, initStep2[initStep2.length - 1].balance];
+                    case 2:
+                        e_3 = _a.sent();
+                        throw e_3;
+                    case 3: return [2 /*return*/];
+                }
+            });
+        });
+    };
     return ParserBase;
 }());
 
@@ -2114,11 +2151,11 @@ var EtherscanService = /** @class */ (function () {
     EtherscanService.prototype.getNormalTransactionsRaw = function (walletAddress, paramsValues) {
         var baseValues = {
             address: walletAddress,
-            apikey: this.config.env.etherscanApiKey,
+            apikey: this.config.env.explorerApiKey,
             sort: 'asc',
         };
         var queryParams = toQueryString(__assign(__assign({}, baseValues), paramsValues), false);
-        return Axios.get(defaultConfig.etherscanApiUrl + "account&action=txlist&" + queryParams).then(function (res) { return res.data; });
+        return Axios.get(defaultConfig[this.network].apiUrl + "account&action=txlist&" + queryParams).then(function (res) { return res.data; });
     };
     /// INTERNAL
     EtherscanService.prototype.getInternalTransactions = function (walletAddress, paramsValues) {
@@ -2130,11 +2167,11 @@ var EtherscanService = /** @class */ (function () {
     EtherscanService.prototype.getInternalTransactionsRaw = function (walletAddress, paramsValues) {
         var baseValues = {
             address: walletAddress,
-            apikey: this.config.env.etherscanApiKey,
+            apikey: this.config.env.explorerApiKey,
             sort: 'asc',
         };
         var queryParams = toQueryString(__assign(__assign({}, baseValues), paramsValues), false);
-        return Axios.get(defaultConfig.etherscanApiUrl + "account&action=txlistinternal&" + queryParams).then(function (res) { return res.data; });
+        return Axios.get(defaultConfig[this.network].apiUrl + "account&action=txlistinternal&" + queryParams).then(function (res) { return res.data; });
     };
     /// ERC20
     EtherscanService.prototype.getERC20Transactions = function (walletAddress, paramsValues) {
@@ -2146,11 +2183,11 @@ var EtherscanService = /** @class */ (function () {
     EtherscanService.prototype.getERC20TransactionsRaw = function (walletAddress, paramsValues) {
         var baseValues = {
             address: walletAddress,
-            apikey: this.config.env.etherscanApiKey,
+            apikey: this.config.env.explorerApiKey,
             sort: 'asc',
         };
         var queryParams = toQueryString(__assign(__assign({}, baseValues), paramsValues), false);
-        return Axios.get(defaultConfig.etherscanApiUrl + "account&action=tokentx&" + queryParams).then(function (res) { return res.data; });
+        return Axios.get(defaultConfig[this.network].apiUrl + "account&action=tokentx&" + queryParams).then(function (res) { return res.data; });
     };
     /// ERC721
     EtherscanService.prototype.getERC721Transactions = function (walletAddress, paramsValues) {
@@ -2162,11 +2199,11 @@ var EtherscanService = /** @class */ (function () {
     EtherscanService.prototype.getERC721TransactionsRaw = function (walletAddress, paramsValues) {
         var baseValues = {
             address: walletAddress,
-            apikey: this.config.env.etherscanApiKey,
+            apikey: this.config.env.explorerApiKey,
             sort: 'asc',
         };
         var queryParams = toQueryString(__assign(__assign({}, baseValues), paramsValues), false);
-        return Axios.get(defaultConfig.etherscanApiUrl + "account&action=tokennfttx&" + queryParams).then(function (res) { return res.data; });
+        return Axios.get(defaultConfig[this.network].apiUrl + "account&action=tokennfttx&" + queryParams).then(function (res) { return res.data; });
     };
     return EtherscanService;
 }());
@@ -2224,5 +2261,5 @@ var ParserApi = /** @class */ (function (_super) {
     return ParserApi;
 }(ParserBase));
 
-export { PARSER_MODE, ParserApi, TradeStatus, TradeType };
+export { NETWORK_TYPE, PARSER_MODE, ParserApi, TradeStatus, TradeType };
 //# sourceMappingURL=dexe-crypto-wallet-parser.es5.js.map

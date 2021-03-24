@@ -1,11 +1,12 @@
 import IORedis from 'ioredis';
 import Bottleneck from 'bottleneck';
-import { IParserApiConfig } from '../../../interfaces';
+import { IParserApiConfig, NETWORK_TYPE } from '../../../interfaces';
 import { EtherscanService } from './etherscan.service';
 
 export class EtherscanServiceApi extends EtherscanService {
   private redis: IORedis.Redis;
   protected limiter: Bottleneck;
+  protected network: NETWORK_TYPE;
 
   constructor(protected config: IParserApiConfig) {
     super();

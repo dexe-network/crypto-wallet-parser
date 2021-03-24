@@ -6,6 +6,7 @@ import {
   IServices,
   ITokenBalanceItemBase,
   ITotalIndicators,
+  ITokenBalanceInfo,
 } from '../interfaces';
 import { GetTransaction } from './helpers/getTransaction';
 import { ParseTransaction } from './helpers/parseTransaction';
@@ -90,6 +91,20 @@ export abstract class ParserBase<ConfigType> {
     } catch (e) {
       this.parserProgress.complete();
       console.log('🔥 error: %o', e);
+      throw e;
+    }
+  }
+
+  public async searchWallet(address: string): Promise<ITokenBalanceInfo<ITokenBalanceItemBase> | undefined> {
+    try {
+      const correctWallet = address.toLowerCase();
+      const initStep1 = await this.getTransaction.getAllTransactionByWalletAddress(correctWallet);
+      const initStep2 = this.calculateBalance.buildBalance(initStep1, correctWallet);
+      if (initStep2.length <= 0) {
+        return undefined;
+      }
+      return initStep2[initStep2.length - 1].balance;
+    } catch (e) {
       throw e;
     }
   }

@@ -9,12 +9,13 @@ import {
   INormalTransaction,
 } from '../../../interfaces/etherscan.interfaces';
 import { toQueryString } from '../../../helpers/http.helper';
-import { IParserClientConfig } from '../../../interfaces';
+import { IParserClientConfig, NETWORK_TYPE } from '../../../interfaces';
 import defaultConfig from '../../../constants/defaultConfig';
 
 export abstract class EtherscanService {
   protected abstract limiter: Bottleneck;
   protected abstract config: IParserClientConfig;
+  protected abstract network: NETWORK_TYPE;
 
   /// NORMAL
 
@@ -33,12 +34,12 @@ export abstract class EtherscanService {
   ): Promise<IEtherscanResponse<INormalTransaction[]>> {
     const baseValues = {
       address: walletAddress,
-      apikey: this.config.env.etherscanApiKey,
+      apikey: this.config.env.explorerApiKey,
       sort: 'asc',
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<INormalTransaction[]>>(
-      `${defaultConfig.etherscanApiUrl}account&action=txlist&${queryParams}`,
+      `${defaultConfig[this.network].apiUrl}account&action=txlist&${queryParams}`,
     ).then((res) => res.data);
   }
 
@@ -59,12 +60,12 @@ export abstract class EtherscanService {
   ): Promise<IEtherscanResponse<IInternalTransaction[]>> {
     const baseValues: IEtherscanParams = {
       address: walletAddress,
-      apikey: this.config.env.etherscanApiKey,
+      apikey: this.config.env.explorerApiKey,
       sort: 'asc',
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<IInternalTransaction[]>>(
-      `${defaultConfig.etherscanApiUrl}account&action=txlistinternal&${queryParams}`,
+      `${defaultConfig[this.network].apiUrl}account&action=txlistinternal&${queryParams}`,
     ).then((res) => res.data);
   }
 
@@ -85,12 +86,12 @@ export abstract class EtherscanService {
   ): Promise<IEtherscanResponse<IERC20Transaction[]>> {
     const baseValues: IEtherscanParams = {
       address: walletAddress,
-      apikey: this.config.env.etherscanApiKey,
+      apikey: this.config.env.explorerApiKey,
       sort: 'asc',
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<IERC20Transaction[]>>(
-      `${defaultConfig.etherscanApiUrl}account&action=tokentx&${queryParams}`,
+      `${defaultConfig[this.network].apiUrl}account&action=tokentx&${queryParams}`,
     ).then((res) => res.data);
   }
 
@@ -111,12 +112,12 @@ export abstract class EtherscanService {
   ): Promise<IEtherscanResponse<IERC721Transaction[]>> {
     const baseValues: IEtherscanParams = {
       address: walletAddress,
-      apikey: this.config.env.etherscanApiKey,
+      apikey: this.config.env.explorerApiKey,
       sort: 'asc',
     };
     const queryParams = toQueryString({ ...baseValues, ...paramsValues }, false);
     return Axios.get<IEtherscanResponse<IERC721Transaction[]>>(
-      `${defaultConfig.etherscanApiUrl}account&action=tokennfttx&${queryParams}`,
+      `${defaultConfig[this.network].apiUrl}account&action=tokennfttx&${queryParams}`,
     ).then((res) => res.data);
   }
 }
