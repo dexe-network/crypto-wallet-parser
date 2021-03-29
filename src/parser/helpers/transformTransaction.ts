@@ -4,10 +4,10 @@ import {
   IPrebuildTradeItem,
   IPrebuildTradeIterateObject,
 } from '../../interfaces/parser/tradesBuilderV2-prebuild.interface';
-import lodash from 'lodash';
 import { ICacheRequestData, IPreBuildParseItem } from '../../interfaces/parser/transformTransaction.interface';
 import { IGroupedTransactions, ITokenBalanceItemBase } from '../../interfaces';
 import config from '../../constants/defaultConfig';
+import { generateTokenAdressPriceArr } from '../shared/logic';
 
 export class TransformTransaction {
   public transformTokenTradeObjectToArr(data: ITradeIterateObject): ITradeItem[] {
@@ -100,12 +100,8 @@ export class TransformTransaction {
       .map((item) => {
         return {
           hash: item.transactionHash,
-          tokens: lodash.uniq([
-            ...Object.keys(item.balancesBeforeTransaction).filter((token) =>
-              item.balancesBeforeTransaction[token].amount.isGreaterThan(0),
-            ),
-            ...Object.keys(item.balances).filter((token) => item.balances[token].amount.isGreaterThanOrEqualTo(0)),
-          ]),
+          // Important value - affect to generate cache id
+          tokens: generateTokenAdressPriceArr(item),
           blockNumber: item.blockNumber,
         };
       });

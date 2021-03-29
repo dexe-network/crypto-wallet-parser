@@ -3,8 +3,8 @@ import { buildBalanceTransformer } from '../../helpers/tokens.helper';
 import BigNumber from 'bignumber.js';
 import { UniswapServiceApi } from '../../services/outgoing/uniswap/uniswap.main.service';
 import { UniswapServiceClient } from '../../services/outgoing/uniswap/uniswap.browser.service';
-import lodash from 'lodash';
 import { ICacheRequestData } from '../../interfaces/parser/transformTransaction.interface';
+import { generateTokenAdressPriceArr } from '../shared/logic';
 
 export class ParseTransaction {
   constructor(private uniswapService: UniswapServiceApi | UniswapServiceClient) {}
@@ -81,12 +81,11 @@ export class ParseTransaction {
       const value = transaction as IGroupedTransactions<ITokenBalanceItem>;
       const prices = await this.uniswapService.checkTokenArrPriceInUSDandETHLimiter({
         tokens: parseBeforePrices
-          ? lodash.uniq([
-              ...Object.keys(value.balanceBeforeTransaction).filter((token) =>
-                value.balanceBeforeTransaction[token].amount.isGreaterThan(0),
-              ),
-              ...Object.keys(value.balance).filter((token) => value.balance[token].amount.isGreaterThanOrEqualTo(0)),
-            ])
+          ? // Important value - affect to generate cache id
+            generateTokenAdressPriceArr({
+              balances: value.balance,
+              balancesBeforeTransaction: value.balanceBeforeTransaction,
+            })
           : Object.keys(value.balance).filter((token) => value.balance[token].amount.isGreaterThanOrEqualTo(0)),
         blockNumber: value.blockNumber,
       });
