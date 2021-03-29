@@ -15,6 +15,7 @@ import {
   IEventTokenPrice,
   IOperationAmount,
   IOperationItem,
+  IOperationItemBase,
   IOperationPrice,
   IOperationTokens,
   IStartDep,
@@ -43,7 +44,7 @@ export class TradesBuilderV2 {
     this.behaviourConfig = generateBehaviourConfig(config);
   }
 
-  public async buildTrades(data: IGroupedTransactions<ITokenBalanceItem>[]): Promise<ITradeIterateObject> {
+  public async buildTrades(data: IGroupedTransactions<ITokenBalanceItemBase>[]): Promise<ITradeIterateObject> {
     const rawResult = await this.behaviourIterator(data);
 
     const openTrades = Object.values(rawResult)
@@ -61,14 +62,11 @@ export class TradesBuilderV2 {
 
   private async generateVirtualTrades(
     openTrades: ITradeItem[],
-    lastGroupedTransaction: IGroupedTransactions<ITokenBalanceItem>,
-  ): Promise<IGroupedTransactions<ITokenBalanceItem>[]> {
+    lastGroupedTransaction: IGroupedTransactions<ITokenBalanceItemBase>,
+  ): Promise<IGroupedTransactions<ITokenBalanceItemBase>[]> {
     try {
       const currentBlockNumber = await this.services.web3Service.getCurrentBlockNumberLimiter();
-      return await this.parseTransactionWallet.parseTransactionBalancePrice(
-        this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber),
-        true,
-      );
+      return this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber);
     } catch (e) {
       throw e;
     }
@@ -76,7 +74,7 @@ export class TradesBuilderV2 {
 
   private generateVirtualTransactions(
     openTrades: ITradeItem[],
-    lastGroupedTransaction: IGroupedTransactions<ITokenBalanceItem>,
+    lastGroupedTransaction: IGroupedTransactions<ITokenBalanceItemBase>,
     currentBlockNumber: number,
   ): IGroupedTransactions<ITokenBalanceItemBase>[] {
     return openTrades.reduce<IGroupedTransactions<ITokenBalanceItemBase>[]>((accum, value, index) => {
@@ -127,7 +125,7 @@ export class TradesBuilderV2 {
   }
 
   private async behaviourIterator(
-    data: IGroupedTransactions<ITokenBalanceItem>[],
+    data: IGroupedTransactions<ITokenBalanceItemBase>[],
     initValue = {},
   ): Promise<ITradeIterateObject> {
     // console.log('behaviourIterator', data.length);
@@ -137,24 +135,24 @@ export class TradesBuilderV2 {
       if (this.isErrorTransaction(currentItem)) {
         return accumulatorValue;
       }
-      const state = await this.getTokenOperationState(currentItem);
+      const stateBase = await this.getTokenOperationState(currentItem);
 
-      if (state.isTrustedProvider) {
+      if (stateBase.isTrustedProvider) {
         // Uniswap transaction
-        for (const operation of state.operations) {
+        for (const operation of stateBase.operations) {
           if (operation.amount.isGreaterThan(0)) {
             // Income event (Open trade or Rebuy open position)
-            this.calculateIncomeEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
+            await this.calculateIncomeEvent(accumulatorValue, operation, stateBase, currentItem);
           } else {
-            this.calculateOutgoingEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
+            await this.calculateOutgoingEvent(accumulatorValue, operation, stateBase, currentItem);
           }
         }
       } else {
         // Other transaction
-        for (const operation of state.operations) {
+        for (const operation of stateBase.operations) {
           if (operation.amount.isLessThanOrEqualTo(0)) {
             // Income event (Open trade or Rebuy open position)
-            this.calculateOutgoingEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
+            await this.calculateOutgoingEvent(accumulatorValue, operation, stateBase, currentItem);
           }
         }
       }
@@ -163,32 +161,38 @@ export class TradesBuilderV2 {
     }, Promise.resolve(initValue));
   }
 
-  private calculateOutgoingEvent(
+  private async calculateOutgoingEvent(
     accumulatorValue: ITradeIterateObject,
     operation: IOperationAmount,
-    state: IOperationItem,
-    balanceBeforeTransaction: ITokenBalanceInfo<ITokenBalanceItem>,
-  ): void {
+    stateBase: IOperationItemBase,
+    currentItem: IGroupedTransactions<ITokenBalanceItemBase>,
+  ): Promise<void> {
     const openTradeIndex = (accumulatorValue[operation.address]?.trades || []).findIndex(
       (x) => x.tradeStatus === TradeStatus.OPEN,
     );
     if (openTradeIndex >= 0) {
+      const currentItemParsed = await this.parseTransactionWallet.parseTransactionBalancePriceSingle(currentItem, true);
+      const stateParsed = await this.getTokenOperationPrice(stateBase, currentItemParsed);
+
       this.calculateOperationWithOpenTrade(
         operation,
-        state,
+        stateParsed,
         accumulatorValue[operation.address],
         openTradeIndex,
-        balanceBeforeTransaction,
+        currentItemParsed.balanceBeforeTransaction,
       );
     }
   }
 
-  private calculateIncomeEvent(
+  private async calculateIncomeEvent(
     accumulatorValue: ITradeIterateObject,
     operation: IOperationAmount,
-    state: IOperationItem,
-    balanceBeforeTransaction: ITokenBalanceInfo<ITokenBalanceItem>,
-  ): void {
+    stateBase: IOperationItemBase,
+    currentItem: IGroupedTransactions<ITokenBalanceItemBase>,
+  ): Promise<void> {
+    const currentItemParsed = await this.parseTransactionWallet.parseTransactionBalancePriceSingle(currentItem, true);
+    const stateParsed = await this.getTokenOperationPrice(stateBase, currentItemParsed);
+
     if (accumulatorValue[operation.address]) {
       const openTradeIndex = accumulatorValue[operation.address].trades.findIndex(
         (x) => x.tradeStatus === TradeStatus.OPEN,
@@ -196,18 +200,20 @@ export class TradesBuilderV2 {
       if (openTradeIndex >= 0) {
         this.calculateOperationWithOpenTrade(
           operation,
-          state,
+          stateParsed,
           accumulatorValue[operation.address],
           openTradeIndex,
-          balanceBeforeTransaction,
+          currentItemParsed.balanceBeforeTransaction,
         );
       } else {
-        accumulatorValue[operation.address].trades.push(this.openNewTrade(state, operation, balanceBeforeTransaction));
+        accumulatorValue[operation.address].trades.push(
+          this.openNewTrade(stateParsed, operation, currentItemParsed.balanceBeforeTransaction),
+        );
       }
     } else {
       accumulatorValue[operation.address] = {
         tokenAddress: operation.address,
-        trades: [this.openNewTrade(state, operation, balanceBeforeTransaction)],
+        trades: [this.openNewTrade(stateParsed, operation, currentItemParsed.balanceBeforeTransaction)],
       };
     }
   }
@@ -555,7 +561,7 @@ export class TradesBuilderV2 {
     }
   }
 
-  private isErrorTransaction(data: IGroupedTransactions<ITokenBalanceItem>) {
+  private isErrorTransaction(data: IGroupedTransactions<ITokenBalanceItemBase>) {
     if (
       [
         ...(data.normalTransactions || []),
@@ -569,9 +575,11 @@ export class TradesBuilderV2 {
     return false;
   }
 
-  private async getTokenOperationState(currentData: IGroupedTransactions<ITokenBalanceItem>): Promise<IOperationItem> {
+  private async getTokenOperationState(
+    currentData: IGroupedTransactions<ITokenBalanceItemBase>,
+  ): Promise<IOperationItemBase> {
     try {
-      let state: IOperationItem;
+      let state: IOperationItemBase;
       const balancesDifferencesData = this.balanceDifferences(
         currentData.balance,
         currentData.balanceBeforeTransaction,
@@ -583,10 +591,64 @@ export class TradesBuilderV2 {
         currentData.normalTransactions[0]?.to?.toLowerCase() === config.uniswap.uniswapRouterAddress
       ) {
         const normalTransaction = currentData.normalTransactions[0];
-        const uniswapTransactionData = await this.services.uniswapService.getUniswapTransactionByIdLimiter(
-          normalTransaction.hash,
-          +normalTransaction.blockNumber,
-        );
+        const uniswapTransactionData = await this.services.uniswapService.getUniswapTransactionByIdLimiter({
+          transactionId: normalTransaction.hash,
+          blockNumber: +normalTransaction.blockNumber,
+        });
+
+        // Catch Only correct Uniswap Swaps (for trades) Exclude add or remove from liquidity
+        if (uniswapTransactionData) {
+          state = {
+            isVirtualTransaction: currentData.isVirtualTransaction,
+            operations: balancesDifferencesData.differences,
+            operationInfo: balancesDifferencesData.operationInfo,
+            isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.first,
+            timeStamp: normalTransaction.timeStamp,
+            transactionHash: normalTransaction.hash,
+          };
+        } else {
+          // Catch add or remove from liquidity Uniswap
+          state = {
+            isVirtualTransaction: currentData.isVirtualTransaction,
+            operations: balancesDifferencesData.differences,
+            operationInfo: balancesDifferencesData.operationInfo,
+            isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.second,
+            timeStamp: normalTransaction.timeStamp,
+            transactionHash: normalTransaction.hash,
+          };
+        }
+      } else {
+        state = {
+          isVirtualTransaction: currentData.isVirtualTransaction,
+          operations: balancesDifferencesData.differences,
+          operationInfo: balancesDifferencesData.operationInfo,
+          isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.third,
+          timeStamp: currentData.timeStamp,
+          transactionHash: currentData.hash,
+        };
+      }
+
+      return state;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  private async getTokenOperationPrice(
+    stateBase: IOperationItemBase,
+    currentData: IGroupedTransactions<ITokenBalanceItem>,
+  ): Promise<IOperationItem> {
+    try {
+      let stateWithPrices: IOperationItem;
+      if (
+        currentData.normalTransactions &&
+        currentData.normalTransactions[0]?.to?.toLowerCase() === config.uniswap.uniswapRouterAddress
+      ) {
+        const normalTransaction = currentData.normalTransactions[0];
+        const uniswapTransactionData = await this.services.uniswapService.getUniswapTransactionByIdLimiter({
+          transactionId: normalTransaction.hash,
+          blockNumber: +normalTransaction.blockNumber,
+        });
 
         // Catch Only correct Uniswap Swaps (for trades) Exclude add or remove from liquidity
         if (uniswapTransactionData) {
@@ -598,10 +660,8 @@ export class TradesBuilderV2 {
             transactionFeeETH,
             transactionFeeUSD,
           );
-          state = {
-            isVirtualTransaction: currentData.isVirtualTransaction,
-            operations: balancesDifferencesData.differences,
-            operationInfo: balancesDifferencesData.operationInfo,
+          stateWithPrices = {
+            ...stateBase,
             amount: {
               raw: {
                 ETH: operationPriceUniRaw.amountInETH,
@@ -612,18 +672,12 @@ export class TradesBuilderV2 {
                 USD: operationPriceIncludeFee.amountInUSD,
               },
             },
-            isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.first,
-            timeStamp: normalTransaction.timeStamp,
-            transactionHash: normalTransaction.hash,
             transactionFeeETH,
             transactionFeeUSD,
           };
         } else {
           // Catch add or remove from liquidity Uniswap
-          const operationPriceOtherRaw = this.operationPriceFromOtherSource(
-            balancesDifferencesData.differences,
-            currentData.balance,
-          );
+          const operationPriceOtherRaw = this.operationPriceFromOtherSource(stateBase.operations, currentData.balance);
           const transactionFeeETH = currentData.feeInETH;
           const transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
           const operationPriceIncludeFee = this.operationPriceWithFee(
@@ -631,10 +685,8 @@ export class TradesBuilderV2 {
             transactionFeeETH,
             transactionFeeUSD,
           );
-          state = {
-            isVirtualTransaction: currentData.isVirtualTransaction,
-            operations: balancesDifferencesData.differences,
-            operationInfo: balancesDifferencesData.operationInfo,
+          stateWithPrices = {
+            ...stateBase,
             amount: {
               raw: {
                 ETH: operationPriceOtherRaw.amountInETH,
@@ -645,18 +697,12 @@ export class TradesBuilderV2 {
                 USD: operationPriceIncludeFee.amountInUSD,
               },
             },
-            isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.second,
-            timeStamp: normalTransaction.timeStamp,
-            transactionHash: normalTransaction.hash,
             transactionFeeETH,
             transactionFeeUSD,
           };
         }
       } else {
-        const operationPriceOtherRaw = this.operationPriceFromOtherSource(
-          balancesDifferencesData.differences,
-          currentData.balance,
-        );
+        const operationPriceOtherRaw = this.operationPriceFromOtherSource(stateBase.operations, currentData.balance);
         const transactionFeeETH = currentData.feeInETH;
         const transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
         const operationPriceIncludeFee = this.operationPriceWithFee(
@@ -664,10 +710,8 @@ export class TradesBuilderV2 {
           transactionFeeETH,
           transactionFeeUSD,
         );
-        state = {
-          isVirtualTransaction: currentData.isVirtualTransaction,
-          operations: balancesDifferencesData.differences,
-          operationInfo: balancesDifferencesData.operationInfo,
+        stateWithPrices = {
+          ...stateBase,
           amount: {
             raw: {
               ETH: operationPriceOtherRaw.amountInETH,
@@ -678,15 +722,12 @@ export class TradesBuilderV2 {
               USD: operationPriceIncludeFee.amountInUSD,
             },
           },
-          isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.third,
-          timeStamp: currentData.timeStamp,
-          transactionHash: currentData.hash,
           transactionFeeETH,
           transactionFeeUSD,
         };
       }
 
-      return state;
+      return stateWithPrices;
     } catch (e) {
       throw e;
     }
@@ -705,8 +746,8 @@ export class TradesBuilderV2 {
   }
 
   private balanceDifferences(
-    currentBalance: ITokenBalanceInfo<ITokenBalanceItem>,
-    beforeBalance: ITokenBalanceInfo<ITokenBalanceItem>,
+    currentBalance: ITokenBalanceInfo<ITokenBalanceItemBase>,
+    beforeBalance: ITokenBalanceInfo<ITokenBalanceItemBase>,
     parsedFeeInETH: BigNumber,
   ): balanceDifferencesResult {
     const tokensAddress = lodash.uniq([...Object.keys(currentBalance), ...Object.keys(beforeBalance)]);

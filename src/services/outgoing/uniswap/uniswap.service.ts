@@ -4,6 +4,7 @@ import {
   IArrTokenPriceCheckResult,
   ICheckTokenArrPriceInUSDandETHArguments,
   ICheckTokenArrPriceInUSDandETHResponse,
+  IGetUniswapTransactionByIdArguments,
   ITokenPriceUSDETH,
   IUniswapRawTransaction,
 } from '../../../interfaces/uniswap.interfaces';
@@ -17,11 +18,14 @@ import { IParserClientConfig } from '../../../interfaces';
 import { chunk } from 'lodash';
 import defaultConfig from '../../../constants/defaultConfig';
 import { BehaviorSubject } from 'rxjs';
+import { UniswapCacheService } from '../../helpers/uniswapCache.service';
+import { UniswapPrebuildCacheService } from '../../helpers/uniswapPrebuildCache.service';
 
 export abstract class UniswapServiceBase {
   protected abstract limiter: Bottleneck;
   protected abstract clientGQ: GraphQLClient;
   protected abstract config: IParserClientConfig;
+  protected abstract uniswapCacheService: UniswapCacheService | UniswapPrebuildCacheService;
 
   public requestCounter = new BehaviorSubject(0);
 
@@ -32,13 +36,21 @@ export abstract class UniswapServiceBase {
   public async checkTokenArrPriceInUSDandETHLimiter(
     argumentsData: ICheckTokenArrPriceInUSDandETHArguments,
   ): Promise<IArrTokenPriceCheckResult> {
+    if (await this.uniswapCacheService.isExist(JSON.stringify(argumentsData))) {
+      return this.uniswapCacheService.getData<IArrTokenPriceCheckResult>(JSON.stringify(argumentsData));
+    }
+
     return this.limiter.schedule<IArrTokenPriceCheckResult>(() => this.checkTokenArrPriceInUSDandETH(argumentsData));
   }
 
-  public getUniswapTransactionByIdLimiter(transactionId: string, blockNumber: number): Promise<IUniswapRawTransaction> {
-    return this.limiter.schedule<IUniswapRawTransaction>(() =>
-      this.getUniswapTransactionById(transactionId, blockNumber),
-    );
+  public async getUniswapTransactionByIdLimiter(
+    argumentsData: IGetUniswapTransactionByIdArguments,
+  ): Promise<IUniswapRawTransaction> {
+    if (await this.uniswapCacheService.isExist(JSON.stringify(argumentsData))) {
+      return this.uniswapCacheService.getData<IUniswapRawTransaction>(JSON.stringify(argumentsData));
+    }
+
+    return this.limiter.schedule<IUniswapRawTransaction>(() => this.getUniswapTransactionById(argumentsData));
   }
 
   protected async checkTokenArrPriceInUSDandETH(
@@ -156,6 +168,11 @@ export abstract class UniswapServiceBase {
         return accum;
       }, {} as IArrTokenPriceCheckResult);
 
+      // Write data to cache
+      if (dataResult && !(await this.uniswapCacheService.isExist(JSON.stringify(argumentsData)))) {
+        await this.uniswapCacheService.setData<IArrTokenPriceCheckResult>(JSON.stringify(argumentsData), dataResult);
+      }
+
       return dataResult;
     } catch (e) {
       throw e;
@@ -245,11 +262,13 @@ export abstract class UniswapServiceBase {
     }
   }
 
-  private async getUniswapTransactionById(transactionId: string, blockNumber: number): Promise<IUniswapRawTransaction> {
+  private async getUniswapTransactionById(
+    argumentsData: IGetUniswapTransactionByIdArguments,
+  ): Promise<IUniswapRawTransaction> {
     try {
       const query = gql`
       {
-        swaps(where: { transaction: "${transactionId}" }) {
+        swaps(where: { transaction: "${argumentsData.transactionId}" }) {
           id
           transaction {
             id
@@ -297,12 +316,12 @@ export abstract class UniswapServiceBase {
           logIndex
           amountUSD
         }
-        ethPrice: bundles(block: { number: ${blockNumber} }) {
+        ethPrice: bundles(block: { number: ${argumentsData.blockNumber} }) {
           ethPrice
         }
       }
     `;
-      return this.clientGQ.request<any>(query).then<IUniswapRawTransaction>((res) => {
+      const dataResult = await this.clientGQ.request<any>(query).then<IUniswapRawTransaction>((res) => {
         this.requestCounter.next(this.requestCounter.value + 1);
         if (!res.swaps[0]) {
           return undefined;
@@ -312,6 +331,13 @@ export abstract class UniswapServiceBase {
         res.swaps[0].ethPrice = res.ethPrice[0].ethPrice;
         return res.swaps[0];
       });
+
+      // Write data to cache
+      if (dataResult && !(await this.uniswapCacheService.isExist(JSON.stringify(argumentsData)))) {
+        await this.uniswapCacheService.setData<IUniswapRawTransaction>(JSON.stringify(argumentsData), dataResult);
+      }
+
+      return dataResult;
     } catch (e) {
       throw e;
     }

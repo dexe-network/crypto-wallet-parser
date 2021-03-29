@@ -16,18 +16,22 @@ import { CalculateBalance } from './helpers/calculateBalance';
 import { CalculateTransaction } from './helpers/calculateTransaction';
 import { BehaviorSubject } from 'rxjs';
 import { auditTime } from 'rxjs/operators';
+import { TradesBuilderV2Prebuild } from './helpers/tradesBuilderV2-prebuild';
+import BigNumber from 'bignumber.js';
 
 export abstract class ParserBase<ConfigType> {
   public rawTransactions: IGroupedTransactions<ITokenBalanceItemBase>[] = [];
 
   public parserProgress = new BehaviorSubject(0);
   public uniswapRequestCount = this.services.uniswapService.requestCounter.asObservable().pipe(auditTime(1000));
+  public estimatedUniswapRequests = new BehaviorSubject(0);
 
   protected getTransaction = new GetTransaction(this.services.etherscanService);
   protected parseTransaction = new ParseTransaction(this.services.uniswapService);
   protected filterTransaction = new FilterTransaction();
   protected transformTransaction = new TransformTransaction();
   protected tradesBuilderV2 = new TradesBuilderV2(this.services, this.config);
+  protected tradesBuilderV2Prebuild = new TradesBuilderV2Prebuild(this.services, this.config);
   protected calculateBalance = new CalculateBalance();
   protected calculateTransaction = new CalculateTransaction();
 
@@ -41,8 +45,7 @@ export abstract class ParserBase<ConfigType> {
       const initStep2 = this.calculateBalance.buildBalance(initStep1, this.config.correctWallet);
       this.rawTransactions = initStep2;
     } catch (e) {
-      this.parserProgress.complete();
-      this.services.uniswapService.requestCounter.complete();
+      this.completeStreams();
       console.log('🔥 error: %o', e);
       throw e;
     }
@@ -51,35 +54,41 @@ export abstract class ParserBase<ConfigType> {
   public async process(): Promise<IDataProviderResult> {
     try {
       const rawTransactions = this.rawTransactions;
-      if (!rawTransactions) {
-        throw new Error('Etherscan transaction download error');
+      if (!rawTransactions || rawTransactions.length <= 0) {
+        this.completeStreams();
+        return this.noTransactionsResult();
       }
+
+      const preBuildTrades = await this.tradesBuilderV2Prebuild.buildTrades(rawTransactions);
+      const cacheRequestData = this.transformTransaction.buildCacheRequestData(preBuildTrades, rawTransactions);
+      this.estimatedUniswapRequests.next(cacheRequestData.requestsCount);
 
       // set progress
       this.parserProgress.next(85);
-      const transactionStep1 = await this.parseTransaction.parseTransactionBalancePrice(rawTransactions);
+      await this.parseTransaction.parsePriceAndStoreToCache(cacheRequestData);
+      // const transactionStep1 = await this.parseTransaction.parseTransactionBalancePrice(rawTransactions);
+
       // set progress
       this.parserProgress.next(98);
-      const transactionStep2 = await this.tradesBuilderV2.buildTrades(transactionStep1);
+      const transactionStep2 = await this.tradesBuilderV2.buildTrades(rawTransactions);
       const transactionStep3 = this.transformTransaction.transformTokenTradeObjectToArr(transactionStep2);
 
       // Calculate Statistic Data
       const currentDeposit: IGetCurrentWalletBalanceResult = this.calculateTransaction.getCurrentWalletBalance(
-        transactionStep1[transactionStep1.length - 1],
+        await this.parseTransaction.parseTransactionBalancePriceSingle(rawTransactions[rawTransactions.length - 1]),
       );
       const startDeposit: IGetCurrentWalletBalanceResult = this.calculateTransaction.getCurrentWalletBalance(
-        transactionStep1[0],
+        await this.parseTransaction.parseTransactionBalancePriceSingle(rawTransactions[0]),
       );
 
-      const lastTransactionBlockNumber = transactionStep1[transactionStep1.length - 1]?.blockNumber || 0;
+      const lastTransactionBlockNumber = rawTransactions[rawTransactions.length - 1]?.blockNumber || 0;
 
       const transactionsCount = rawTransactions.length;
       const tradesCount = this.calculateTransaction.tradesCount(transactionStep3);
       const totalIndicators: ITotalIndicators = this.calculateTransaction.totalProfitLoss(transactionStep3);
       const totalPoints = this.calculateTransaction.totalPoints(transactionStep3);
 
-      this.parserProgress.complete();
-      this.services.uniswapService.requestCounter.complete();
+      this.completeStreams();
 
       return {
         points: totalPoints,
@@ -92,10 +101,37 @@ export abstract class ParserBase<ConfigType> {
         trades: transactionStep3,
       };
     } catch (e) {
-      this.parserProgress.complete();
-      this.services.uniswapService.requestCounter.complete();
+      this.completeStreams();
       console.log('🔥 error: %o', e);
       throw e;
     }
+  }
+
+  private noTransactionsResult(): IDataProviderResult {
+    return {
+      points: new BigNumber(0),
+      currentDeposit: {
+        amountInETH: new BigNumber(0),
+        amountInUSD: new BigNumber(0),
+      },
+      startDeposit: {
+        amountInETH: new BigNumber(0),
+        amountInUSD: new BigNumber(0),
+      },
+      transactionsCount: 0,
+      tradesCount: 0,
+      totalIndicators: {
+        profitLoss: { fromETH: new BigNumber(0), fromUSD: new BigNumber(0) },
+        profit: { fromETH: new BigNumber(0), fromUSD: new BigNumber(0) },
+      },
+      lastCheckBlockNumber: 0,
+      trades: [],
+    };
+  }
+
+  private completeStreams(): void {
+    this.parserProgress.complete();
+    this.services.uniswapService.requestCounter.complete();
+    this.estimatedUniswapRequests.complete();
   }
 }

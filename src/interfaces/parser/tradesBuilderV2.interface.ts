@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-export interface IOperationItem {
-  operations: IOperationAmount[];
+export interface IOperationItem extends IOperationItemBase {
   amount: {
     raw: {
       ETH: BigNumber;
@@ -12,9 +11,13 @@ export interface IOperationItem {
       USD: BigNumber;
     };
   };
-  operationInfo: IOperationTokens;
   transactionFeeETH: BigNumber;
   transactionFeeUSD: BigNumber;
+}
+
+export interface IOperationItemBase {
+  operations: IOperationAmount[];
+  operationInfo: IOperationTokens;
   timeStamp: string;
   transactionHash: string;
   isVirtualTransaction: boolean;

@@ -111,3 +111,8 @@ export interface ICheckTokenArrPriceInUSDandETHArguments {
   tokens: string[];
   blockNumber: number;
 }
+
+export interface IGetUniswapTransactionByIdArguments {
+  transactionId: string;
+  blockNumber: number;
+}
