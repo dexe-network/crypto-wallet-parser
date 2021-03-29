@@ -1,14 +1,12 @@
 import { IGroupedTransactions, ITokenBalanceItemBase } from '../../interfaces/etherscan.interfaces';
-import { ITradeIterateObject } from '../../interfaces/parser/tradesBuilderV2.interface';
 import { IParserClientConfig, IServices } from '../../interfaces';
-export declare class TradesBuilderV2 {
+import { IPrebuildTradeIterateObject } from '../../interfaces/parser/tradesBuilderV2-prebuild.interface';
+export declare class TradesBuilderV2Prebuild {
     private services;
     private config;
-    private calculateTransaction;
-    private parseTransactionWallet;
     private behaviourConfig;
     constructor(services: IServices, config: IParserClientConfig);
-    buildTrades(data: IGroupedTransactions<ITokenBalanceItemBase>[]): Promise<ITradeIterateObject>;
+    buildTrades(data: IGroupedTransactions<ITokenBalanceItemBase>[]): Promise<IPrebuildTradeIterateObject>;
     private generateVirtualTrades;
     private generateVirtualTransactions;
     private generateBalanceDiffForVirtualTradePnl;
@@ -18,19 +16,10 @@ export declare class TradesBuilderV2 {
     private calculateOperationWithOpenTrade;
     private createIterateSellEvents;
     private openNewTrade;
-    private getBalanceCost;
     private createNewTradeEvent;
-    private calculateAverageStartDep;
-    private averageStartDepETH;
-    private averageStartDepUSD;
-    private calculateTokenEventPrice;
     private createTokenInfo;
     private tradeTypeSwitcher;
     private isErrorTransaction;
     private getTokenOperationState;
-    private getTokenOperationPrice;
-    private operationPriceWithFee;
     private balanceDifferences;
-    private operationPriceFromOtherSource;
-    private operationPriceFromUniswap;
 }

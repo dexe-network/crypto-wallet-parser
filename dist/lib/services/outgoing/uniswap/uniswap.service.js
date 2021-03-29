@@ -21,25 +21,41 @@ var UniswapServiceBase = /** @class */ (function () {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var _this = this;
             return tslib_1.__generator(this, function (_a) {
-                return [2 /*return*/, this.limiter.schedule(function () { return _this.checkTokenArrPriceInUSDandETH(argumentsData); })];
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.uniswapCacheService.isExist(JSON.stringify(argumentsData))];
+                    case 1:
+                        if (_a.sent()) {
+                            return [2 /*return*/, this.uniswapCacheService.getData(JSON.stringify(argumentsData))];
+                        }
+                        return [2 /*return*/, this.limiter.schedule(function () { return _this.checkTokenArrPriceInUSDandETH(argumentsData); })];
+                }
             });
         });
     };
-    UniswapServiceBase.prototype.getUniswapTransactionByIdLimiter = function (transactionId, blockNumber) {
-        var _this = this;
-        return this.limiter.schedule(function () {
-            return _this.getUniswapTransactionById(transactionId, blockNumber);
+    UniswapServiceBase.prototype.getUniswapTransactionByIdLimiter = function (argumentsData) {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.uniswapCacheService.isExist(JSON.stringify(argumentsData))];
+                    case 1:
+                        if (_a.sent()) {
+                            return [2 /*return*/, this.uniswapCacheService.getData(JSON.stringify(argumentsData))];
+                        }
+                        return [2 /*return*/, this.limiter.schedule(function () { return _this.getUniswapTransactionById(argumentsData); })];
+                }
+            });
         });
     };
     UniswapServiceBase.prototype.checkTokenArrPriceInUSDandETH = function (argumentsData) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var PAIR_SEARCH, tokensArrs, totalResult_1, tokensArrs_1, tokensArrs_1_1, tokens, count, maxTries, _loop_1, this_1, state_1, e_1_1, dataResult, e_2;
-            var e_1, _a;
+            var PAIR_SEARCH, tokensArrs, totalResult_1, tokensArrs_1, tokensArrs_1_1, tokens, count, maxTries, _loop_1, this_1, state_1, e_1_1, dataResult, _a, e_2;
+            var e_1, _b;
             var _this = this;
-            return tslib_1.__generator(this, function (_b) {
-                switch (_b.label) {
+            return tslib_1.__generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
-                        _b.trys.push([0, 10, , 11]);
+                        _c.trys.push([0, 14, , 15]);
                         PAIR_SEARCH = graphql_request_1.gql(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n        query pairs($tokens: [Bytes!], $tokenUSDC: Bytes!, $tokenWETH: Bytes!, $blockNumber: Int!) {\n          usdc0: pairs(\n            where: { token0_in: $tokens, token1: $tokenUSDC, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token1Price\n            token0 {\n              id\n              symbol\n            }\n          }\n          usdc1: pairs(\n            where: { token1_in: $tokens, token0: $tokenUSDC, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token0Price\n            token1 {\n              id\n              symbol\n            }\n          }\n          weth0: pairs(\n            where: { token0_in: $tokens, token1: $tokenWETH, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token1Price\n            token0 {\n              id\n              symbol\n            }\n          }\n          weth1: pairs(\n            where: { token1_in: $tokens, token0: $tokenWETH, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token0Price\n            token1 {\n              id\n              symbol\n            }\n          }\n          ethPrice: bundles(block: { number: $blockNumber }) {\n            ethPrice\n          }\n        }\n      "], ["\n        query pairs($tokens: [Bytes!], $tokenUSDC: Bytes!, $tokenWETH: Bytes!, $blockNumber: Int!) {\n          usdc0: pairs(\n            where: { token0_in: $tokens, token1: $tokenUSDC, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token1Price\n            token0 {\n              id\n              symbol\n            }\n          }\n          usdc1: pairs(\n            where: { token1_in: $tokens, token0: $tokenUSDC, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token0Price\n            token1 {\n              id\n              symbol\n            }\n          }\n          weth0: pairs(\n            where: { token0_in: $tokens, token1: $tokenWETH, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token1Price\n            token0 {\n              id\n              symbol\n            }\n          }\n          weth1: pairs(\n            where: { token1_in: $tokens, token0: $tokenWETH, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token0Price\n            token1 {\n              id\n              symbol\n            }\n          }\n          ethPrice: bundles(block: { number: $blockNumber }) {\n            ethPrice\n          }\n        }\n      "])));
                         tokensArrs = lodash_1.chunk(argumentsData.tokens.map(function (item) { return item.toLowerCase(); }), 5);
                         totalResult_1 = {
@@ -49,11 +65,11 @@ var UniswapServiceBase = /** @class */ (function () {
                             weth1: [],
                             ethPrice: [],
                         };
-                        _b.label = 1;
+                        _c.label = 1;
                     case 1:
-                        _b.trys.push([1, 7, 8, 9]);
+                        _c.trys.push([1, 7, 8, 9]);
                         tokensArrs_1 = tslib_1.__values(tokensArrs), tokensArrs_1_1 = tokensArrs_1.next();
-                        _b.label = 2;
+                        _c.label = 2;
                     case 2:
                         if (!!tokensArrs_1_1.done) return [3 /*break*/, 6];
                         tokens = tokensArrs_1_1.value;
@@ -61,9 +77,9 @@ var UniswapServiceBase = /** @class */ (function () {
                         maxTries = 10;
                         _loop_1 = function () {
                             var localController, localClientGQ, variables, requestTimeLimit, result, e_3;
-                            var _c, _d, _e, _f, _g;
-                            return tslib_1.__generator(this, function (_h) {
-                                switch (_h.label) {
+                            var _d, _e, _f, _g, _h;
+                            return tslib_1.__generator(this, function (_j) {
+                                switch (_j.label) {
                                     case 0:
                                         localController = new AbortController();
                                         localClientGQ = new graphql_request_1.GraphQLClient(defaultConfig_1.default.uniswap.uniswapGQLEndpointUrl, {
@@ -79,22 +95,22 @@ var UniswapServiceBase = /** @class */ (function () {
                                         requestTimeLimit = setTimeout(function () {
                                             localController.abort();
                                         }, 10000);
-                                        _h.label = 1;
+                                        _j.label = 1;
                                     case 1:
-                                        _h.trys.push([1, 3, , 4]);
+                                        _j.trys.push([1, 3, , 4]);
                                         return [4 /*yield*/, localClientGQ.request(PAIR_SEARCH, variables)];
                                     case 2:
-                                        result = _h.sent();
+                                        result = _j.sent();
                                         clearTimeout(requestTimeLimit);
                                         this_1.requestCounter.next(this_1.requestCounter.value + 1);
-                                        (_c = totalResult_1.ethPrice).push.apply(_c, tslib_1.__spreadArray([], tslib_1.__read(result.ethPrice)));
-                                        (_d = totalResult_1.usdc0).push.apply(_d, tslib_1.__spreadArray([], tslib_1.__read(result.usdc0)));
-                                        (_e = totalResult_1.usdc1).push.apply(_e, tslib_1.__spreadArray([], tslib_1.__read(result.usdc1)));
-                                        (_f = totalResult_1.weth0).push.apply(_f, tslib_1.__spreadArray([], tslib_1.__read(result.weth0)));
-                                        (_g = totalResult_1.weth1).push.apply(_g, tslib_1.__spreadArray([], tslib_1.__read(result.weth1)));
+                                        (_d = totalResult_1.ethPrice).push.apply(_d, tslib_1.__spreadArray([], tslib_1.__read(result.ethPrice)));
+                                        (_e = totalResult_1.usdc0).push.apply(_e, tslib_1.__spreadArray([], tslib_1.__read(result.usdc0)));
+                                        (_f = totalResult_1.usdc1).push.apply(_f, tslib_1.__spreadArray([], tslib_1.__read(result.usdc1)));
+                                        (_g = totalResult_1.weth0).push.apply(_g, tslib_1.__spreadArray([], tslib_1.__read(result.weth0)));
+                                        (_h = totalResult_1.weth1).push.apply(_h, tslib_1.__spreadArray([], tslib_1.__read(result.weth1)));
                                         return [2 /*return*/, "break"];
                                     case 3:
-                                        e_3 = _h.sent();
+                                        e_3 = _j.sent();
                                         clearTimeout(requestTimeLimit);
                                         console.log('retry price request');
                                         if (++count === maxTries) {
@@ -106,12 +122,12 @@ var UniswapServiceBase = /** @class */ (function () {
                             });
                         };
                         this_1 = this;
-                        _b.label = 3;
+                        _c.label = 3;
                     case 3:
                         if (!true) return [3 /*break*/, 5];
                         return [5 /*yield**/, _loop_1()];
                     case 4:
-                        state_1 = _b.sent();
+                        state_1 = _c.sent();
                         if (state_1 === "break")
                             return [3 /*break*/, 5];
                         return [3 /*break*/, 3];
@@ -120,12 +136,12 @@ var UniswapServiceBase = /** @class */ (function () {
                         return [3 /*break*/, 2];
                     case 6: return [3 /*break*/, 9];
                     case 7:
-                        e_1_1 = _b.sent();
+                        e_1_1 = _c.sent();
                         e_1 = { error: e_1_1 };
                         return [3 /*break*/, 9];
                     case 8:
                         try {
-                            if (tokensArrs_1_1 && !tokensArrs_1_1.done && (_a = tokensArrs_1.return)) _a.call(tokensArrs_1);
+                            if (tokensArrs_1_1 && !tokensArrs_1_1.done && (_b = tokensArrs_1.return)) _b.call(tokensArrs_1);
                         }
                         finally { if (e_1) throw e_1.error; }
                         return [7 /*endfinally*/];
@@ -135,11 +151,23 @@ var UniswapServiceBase = /** @class */ (function () {
                             accum[value] = _this.tokenPriceSwitcher(token, totalResult_1);
                             return accum;
                         }, {});
-                        return [2 /*return*/, dataResult];
+                        _a = dataResult;
+                        if (!_a) return [3 /*break*/, 11];
+                        return [4 /*yield*/, this.uniswapCacheService.isExist(JSON.stringify(argumentsData))];
                     case 10:
-                        e_2 = _b.sent();
+                        _a = !(_c.sent());
+                        _c.label = 11;
+                    case 11:
+                        if (!_a) return [3 /*break*/, 13];
+                        return [4 /*yield*/, this.uniswapCacheService.setData(JSON.stringify(argumentsData), dataResult)];
+                    case 12:
+                        _c.sent();
+                        _c.label = 13;
+                    case 13: return [2 /*return*/, dataResult];
+                    case 14:
+                        e_2 = _c.sent();
                         throw e_2;
-                    case 11: return [2 /*return*/];
+                    case 15: return [2 /*return*/];
                 }
             });
         });
@@ -226,28 +254,45 @@ var UniswapServiceBase = /** @class */ (function () {
             });
         });
     };
-    UniswapServiceBase.prototype.getUniswapTransactionById = function (transactionId, blockNumber) {
+    UniswapServiceBase.prototype.getUniswapTransactionById = function (argumentsData) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var query;
+            var query, dataResult, _a, e_5;
             var _this = this;
-            return tslib_1.__generator(this, function (_a) {
-                try {
-                    query = graphql_request_1.gql(templateObject_2 || (templateObject_2 = tslib_1.__makeTemplateObject(["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "], ["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "])), transactionId, blockNumber);
-                    return [2 /*return*/, this.clientGQ.request(query).then(function (res) {
-                            var _a;
-                            _this.requestCounter.next(_this.requestCounter.value + 1);
-                            if (!res.swaps[0]) {
-                                return undefined;
-                            }
-                            res.swaps[0].amountETH = new bignumber_js_1.default(res.swaps[0].amountUSD).dividedBy((_a = res === null || res === void 0 ? void 0 : res.ethPrice[0]) === null || _a === void 0 ? void 0 : _a.ethPrice).toString();
-                            res.swaps[0].ethPrice = res.ethPrice[0].ethPrice;
-                            return res.swaps[0];
-                        })];
+            return tslib_1.__generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _b.trys.push([0, 6, , 7]);
+                        query = graphql_request_1.gql(templateObject_2 || (templateObject_2 = tslib_1.__makeTemplateObject(["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "], ["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "])), argumentsData.transactionId, argumentsData.blockNumber);
+                        return [4 /*yield*/, this.clientGQ.request(query).then(function (res) {
+                                var _a;
+                                _this.requestCounter.next(_this.requestCounter.value + 1);
+                                if (!res.swaps[0]) {
+                                    return undefined;
+                                }
+                                res.swaps[0].amountETH = new bignumber_js_1.default(res.swaps[0].amountUSD).dividedBy((_a = res === null || res === void 0 ? void 0 : res.ethPrice[0]) === null || _a === void 0 ? void 0 : _a.ethPrice).toString();
+                                res.swaps[0].ethPrice = res.ethPrice[0].ethPrice;
+                                return res.swaps[0];
+                            })];
+                    case 1:
+                        dataResult = _b.sent();
+                        _a = dataResult;
+                        if (!_a) return [3 /*break*/, 3];
+                        return [4 /*yield*/, this.uniswapCacheService.isExist(JSON.stringify(argumentsData))];
+                    case 2:
+                        _a = !(_b.sent());
+                        _b.label = 3;
+                    case 3:
+                        if (!_a) return [3 /*break*/, 5];
+                        return [4 /*yield*/, this.uniswapCacheService.setData(JSON.stringify(argumentsData), dataResult)];
+                    case 4:
+                        _b.sent();
+                        _b.label = 5;
+                    case 5: return [2 /*return*/, dataResult];
+                    case 6:
+                        e_5 = _b.sent();
+                        throw e_5;
+                    case 7: return [2 /*return*/];
                 }
-                catch (e) {
-                    throw e;
-                }
-                return [2 /*return*/];
             });
         });
     };

@@ -428,6 +428,12 @@
         return beforeDecimal;
     };
 
+    var generateTokenAdressPriceArr = function (data) {
+        return lodash__default['default'].uniq(__spreadArray(__spreadArray([], __read(Object.keys(data.balancesBeforeTransaction).filter(function (token) {
+            return data.balancesBeforeTransaction[token].amount.isGreaterThan(0);
+        }))), __read(Object.keys(data.balances).filter(function (token) { return data.balances[token].amount.isGreaterThanOrEqualTo(0); }))));
+    };
+
     var ParseTransaction = /** @class */ (function () {
         function ParseTransaction(uniswapService) {
             this.uniswapService = uniswapService;
@@ -513,6 +519,151 @@
                 });
             });
         };
+        ParseTransaction.prototype.parseTransactionBalancePriceSingle = function (transaction, parseBeforePrices) {
+            if (parseBeforePrices === void 0) { parseBeforePrices = false; }
+            return __awaiter(this, void 0, void 0, function () {
+                var value_1, prices, _a, _b, key, uniswapResultFirst, _c, _d, key, uniswapResultSecond, e_4;
+                var e_5, _e, e_6, _f;
+                return __generator(this, function (_g) {
+                    switch (_g.label) {
+                        case 0:
+                            _g.trys.push([0, 2, , 3]);
+                            value_1 = transaction;
+                            return [4 /*yield*/, this.uniswapService.checkTokenArrPriceInUSDandETHLimiter({
+                                    tokens: parseBeforePrices
+                                        ? // Important value - affect to generate cache id
+                                            generateTokenAdressPriceArr({
+                                                balances: value_1.balance,
+                                                balancesBeforeTransaction: value_1.balanceBeforeTransaction,
+                                            })
+                                        : Object.keys(value_1.balance).filter(function (token) { return value_1.balance[token].amount.isGreaterThanOrEqualTo(0); }),
+                                    blockNumber: value_1.blockNumber,
+                                })];
+                        case 1:
+                            prices = _g.sent();
+                            try {
+                                for (_a = __values(Object.keys(value_1.balance)), _b = _a.next(); !_b.done; _b = _a.next()) {
+                                    key = _b.value;
+                                    uniswapResultFirst = prices[value_1.balance[key].address];
+                                    if (value_1.balance[key].amount.isGreaterThanOrEqualTo(0)) {
+                                        value_1.balance[key].ethPer1Token = uniswapResultFirst.ethPer1Token;
+                                        value_1.balance[key].usdPer1Token = uniswapResultFirst.usdPer1Token;
+                                        value_1.balance[key].usdPer1ETH = uniswapResultFirst.usdPer1ETH;
+                                        value_1.balance[key].amountInETH = buildBalanceTransformer(value_1.balance[key].amount, +value_1.balance[key].decimals).multipliedBy(uniswapResultFirst.ethPer1Token);
+                                        value_1.balance[key].amountInUSD = buildBalanceTransformer(value_1.balance[key].amount, +value_1.balance[key].decimals).multipliedBy(uniswapResultFirst.usdPer1Token);
+                                    }
+                                    else {
+                                        value_1.balance[key].ethPer1Token = new BigNumber__default['default'](0);
+                                        value_1.balance[key].usdPer1Token = new BigNumber__default['default'](0);
+                                        value_1.balance[key].usdPer1ETH = new BigNumber__default['default'](0);
+                                        value_1.balance[key].amountInETH = new BigNumber__default['default'](0);
+                                        value_1.balance[key].amountInUSD = new BigNumber__default['default'](0);
+                                    }
+                                }
+                            }
+                            catch (e_5_1) { e_5 = { error: e_5_1 }; }
+                            finally {
+                                try {
+                                    if (_b && !_b.done && (_e = _a.return)) _e.call(_a);
+                                }
+                                finally { if (e_5) throw e_5.error; }
+                            }
+                            if (parseBeforePrices) {
+                                try {
+                                    for (_c = __values(Object.keys(value_1.balanceBeforeTransaction)), _d = _c.next(); !_d.done; _d = _c.next()) {
+                                        key = _d.value;
+                                        if (value_1.balanceBeforeTransaction[key].amount.isGreaterThan(0)) {
+                                            uniswapResultSecond = prices[value_1.balanceBeforeTransaction[key].address];
+                                            value_1.balanceBeforeTransaction[key].ethPer1Token = uniswapResultSecond.ethPer1Token;
+                                            value_1.balanceBeforeTransaction[key].usdPer1Token = uniswapResultSecond.usdPer1Token;
+                                            value_1.balanceBeforeTransaction[key].usdPer1ETH = uniswapResultSecond.usdPer1Token;
+                                            value_1.balanceBeforeTransaction[key].amountInETH = buildBalanceTransformer(value_1.balanceBeforeTransaction[key].amount, +value_1.balanceBeforeTransaction[key].decimals).multipliedBy(uniswapResultSecond.ethPer1Token);
+                                            value_1.balanceBeforeTransaction[key].amountInUSD = buildBalanceTransformer(value_1.balanceBeforeTransaction[key].amount, +value_1.balanceBeforeTransaction[key].decimals).multipliedBy(uniswapResultSecond.usdPer1Token);
+                                        }
+                                        else {
+                                            value_1.balanceBeforeTransaction[key].ethPer1Token = new BigNumber__default['default'](0);
+                                            value_1.balanceBeforeTransaction[key].usdPer1Token = new BigNumber__default['default'](0);
+                                            value_1.balanceBeforeTransaction[key].usdPer1ETH = new BigNumber__default['default'](0);
+                                            value_1.balanceBeforeTransaction[key].amountInETH = new BigNumber__default['default'](0);
+                                            value_1.balanceBeforeTransaction[key].amountInUSD = new BigNumber__default['default'](0);
+                                        }
+                                    }
+                                }
+                                catch (e_6_1) { e_6 = { error: e_6_1 }; }
+                                finally {
+                                    try {
+                                        if (_d && !_d.done && (_f = _c.return)) _f.call(_c);
+                                    }
+                                    finally { if (e_6) throw e_6.error; }
+                                }
+                            }
+                            return [2 /*return*/, value_1];
+                        case 2:
+                            e_4 = _g.sent();
+                            throw e_4;
+                        case 3: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        ParseTransaction.prototype.parsePriceAndStoreToCache = function (data) {
+            return __awaiter(this, void 0, void 0, function () {
+                var firstTransaction, lastTransaction, e_7;
+                var _this = this;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 3]);
+                            firstTransaction = this.uniswapService.checkTokenArrPriceInUSDandETHLimiter({
+                                tokens: data.firstTransaction.tokens,
+                                blockNumber: data.firstTransaction.blockNumber,
+                            });
+                            lastTransaction = this.uniswapService.checkTokenArrPriceInUSDandETHLimiter({
+                                tokens: data.lastTransaction.tokens,
+                                blockNumber: data.lastTransaction.blockNumber,
+                            });
+                            // Parse Price
+                            return [4 /*yield*/, Promise.all(__spreadArray(__spreadArray(__spreadArray([], __read(data.prebuildTrades.map(function (itemValue) { return __awaiter(_this, void 0, void 0, function () {
+                                    return __generator(this, function (_a) {
+                                        switch (_a.label) {
+                                            case 0: return [4 /*yield*/, this.uniswapService.checkTokenArrPriceInUSDandETHLimiter({
+                                                    tokens: itemValue.tokens,
+                                                    blockNumber: itemValue.blockNumber,
+                                                })];
+                                            case 1:
+                                                _a.sent();
+                                                return [2 /*return*/, true];
+                                        }
+                                    });
+                                }); }))), __read(data.uniswapTransactions.map(function (itemValue) { return __awaiter(_this, void 0, void 0, function () {
+                                    return __generator(this, function (_a) {
+                                        switch (_a.label) {
+                                            case 0: return [4 /*yield*/, this.uniswapService.getUniswapTransactionByIdLimiter({
+                                                    transactionId: itemValue.hash,
+                                                    blockNumber: itemValue.blockNumber,
+                                                })];
+                                            case 1:
+                                                _a.sent();
+                                                return [2 /*return*/, true];
+                                        }
+                                    });
+                                }); }))), [
+                                    // Parse Start and Current Dep
+                                    firstTransaction,
+                                    lastTransaction,
+                                ]))];
+                        case 1:
+                            // Parse Price
+                            _a.sent();
+                            return [3 /*break*/, 3];
+                        case 2:
+                            e_7 = _a.sent();
+                            throw e_7;
+                        case 3: return [2 /*return*/];
+                    }
+                });
+            });
+        };
         return ParseTransaction;
     }());
 
@@ -543,6 +694,70 @@
                     return 1;
                 }
                 return 0;
+            });
+        };
+        TransformTransaction.prototype.buildCacheRequestData = function (prebuildTradesData, rawTransactions) {
+            var prebuildTrades = this.transformPrebuildTokenTradeObjectToArr(prebuildTradesData);
+            var firstTransactionRaw = rawTransactions[0];
+            var firstTransaction = {
+                tokens: Object.keys(firstTransactionRaw.balance).filter(function (token) {
+                    return firstTransactionRaw.balance[token].amount.isGreaterThanOrEqualTo(0);
+                }),
+                blockNumber: firstTransactionRaw.blockNumber,
+                hash: firstTransactionRaw.hash,
+            };
+            var lastTransactionRaw = rawTransactions[rawTransactions.length - 1];
+            var lastTransaction = {
+                tokens: Object.keys(lastTransactionRaw.balance).filter(function (token) {
+                    return lastTransactionRaw.balance[token].amount.isGreaterThanOrEqualTo(0);
+                }),
+                blockNumber: lastTransactionRaw.blockNumber,
+                hash: lastTransactionRaw.hash,
+            };
+            var uniswapTransactions = rawTransactions
+                .filter(function (x) { var _a, _b; return x.normalTransactions && ((_b = (_a = x.normalTransactions[0]) === null || _a === void 0 ? void 0 : _a.to) === null || _b === void 0 ? void 0 : _b.toLowerCase()) === defaultConfig.uniswap.uniswapRouterAddress; })
+                .map(function (x) {
+                return {
+                    hash: x.hash,
+                    blockNumber: x.blockNumber,
+                    tokens: [],
+                };
+            });
+            return {
+                prebuildTrades: prebuildTrades,
+                firstTransaction: firstTransaction,
+                lastTransaction: lastTransaction,
+                uniswapTransactions: uniswapTransactions,
+                requestsCount: +(firstTransaction.tokens.length / 4.5 +
+                    lastTransaction.tokens.length / 4.5 +
+                    this.calculateTokensLength(prebuildTrades) / 4.5 +
+                    uniswapTransactions.length).toFixed(),
+            };
+        };
+        TransformTransaction.prototype.calculateTokensLength = function (data) {
+            return data.reduce(function (accum, value) {
+                accum += value.tokens.length;
+                return accum;
+            }, 0);
+        };
+        TransformTransaction.prototype.transformPrebuildTokenTradeObjectToArr = function (data) {
+            // Up all trades to single array
+            return Object.values(data)
+                .reduce(function (accum, item) {
+                accum.push.apply(accum, __spreadArray([], __read(item.trades)));
+                return accum;
+            }, new Array())
+                .reduce(function (accum, item) {
+                accum.push.apply(accum, __spreadArray([], __read(item.tradeEvents)));
+                return accum;
+            }, new Array())
+                .map(function (item) {
+                return {
+                    hash: item.transactionHash,
+                    // Important value - affect to generate cache id
+                    tokens: generateTokenAdressPriceArr(item),
+                    blockNumber: item.blockNumber,
+                };
             });
         };
         return TransformTransaction;
@@ -732,16 +947,15 @@
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            _a.trys.push([0, 3, , 4]);
+                            _a.trys.push([0, 2, , 3]);
                             return [4 /*yield*/, this.services.web3Service.getCurrentBlockNumberLimiter()];
                         case 1:
                             currentBlockNumber = _a.sent();
-                            return [4 /*yield*/, this.parseTransactionWallet.parseTransactionBalancePrice(this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber), true)];
-                        case 2: return [2 /*return*/, _a.sent()];
-                        case 3:
+                            return [2 /*return*/, this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber)];
+                        case 2:
                             e_1 = _a.sent();
                             throw e_1;
-                        case 4: return [2 /*return*/];
+                        case 3: return [2 /*return*/];
                     }
                 });
             });
@@ -794,7 +1008,7 @@
                 return __generator(this, function (_a) {
                     // console.log('behaviourIterator', data.length);
                     return [2 /*return*/, data.reduce(function (accumulatorValuePromise, currentItem, index) { return __awaiter(_this, void 0, void 0, function () {
-                            var accumulatorValue, state, _a, _b, operation, _c, _d, operation;
+                            var accumulatorValue, stateBase, _a, _b, operation, e_2_1, _c, _d, operation, e_3_1;
                             var e_2, _e, e_3, _f;
                             return __generator(this, function (_g) {
                                 switch (_g.label) {
@@ -807,78 +1021,129 @@
                                         }
                                         return [4 /*yield*/, this.getTokenOperationState(currentItem)];
                                     case 2:
-                                        state = _g.sent();
-                                        if (state.isTrustedProvider) {
-                                            try {
-                                                // Uniswap transaction
-                                                for (_a = __values(state.operations), _b = _a.next(); !_b.done; _b = _a.next()) {
-                                                    operation = _b.value;
-                                                    if (operation.amount.isGreaterThan(0)) {
-                                                        // Income event (Open trade or Rebuy open position)
-                                                        this.calculateIncomeEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
-                                                    }
-                                                    else {
-                                                        this.calculateOutgoingEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
-                                                    }
-                                                }
-                                            }
-                                            catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                                            finally {
-                                                try {
-                                                    if (_b && !_b.done && (_e = _a.return)) _e.call(_a);
-                                                }
-                                                finally { if (e_2) throw e_2.error; }
-                                            }
+                                        stateBase = _g.sent();
+                                        if (!stateBase.isTrustedProvider) return [3 /*break*/, 13];
+                                        _g.label = 3;
+                                    case 3:
+                                        _g.trys.push([3, 10, 11, 12]);
+                                        _a = __values(stateBase.operations), _b = _a.next();
+                                        _g.label = 4;
+                                    case 4:
+                                        if (!!_b.done) return [3 /*break*/, 9];
+                                        operation = _b.value;
+                                        if (!operation.amount.isGreaterThan(0)) return [3 /*break*/, 6];
+                                        // Income event (Open trade or Rebuy open position)
+                                        return [4 /*yield*/, this.calculateIncomeEvent(accumulatorValue, operation, stateBase, currentItem)];
+                                    case 5:
+                                        // Income event (Open trade or Rebuy open position)
+                                        _g.sent();
+                                        return [3 /*break*/, 8];
+                                    case 6: return [4 /*yield*/, this.calculateOutgoingEvent(accumulatorValue, operation, stateBase, currentItem)];
+                                    case 7:
+                                        _g.sent();
+                                        _g.label = 8;
+                                    case 8:
+                                        _b = _a.next();
+                                        return [3 /*break*/, 4];
+                                    case 9: return [3 /*break*/, 12];
+                                    case 10:
+                                        e_2_1 = _g.sent();
+                                        e_2 = { error: e_2_1 };
+                                        return [3 /*break*/, 12];
+                                    case 11:
+                                        try {
+                                            if (_b && !_b.done && (_e = _a.return)) _e.call(_a);
                                         }
-                                        else {
-                                            try {
-                                                // Other transaction
-                                                for (_c = __values(state.operations), _d = _c.next(); !_d.done; _d = _c.next()) {
-                                                    operation = _d.value;
-                                                    if (operation.amount.isLessThanOrEqualTo(0)) {
-                                                        // Income event (Open trade or Rebuy open position)
-                                                        this.calculateOutgoingEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
-                                                    }
-                                                }
-                                            }
-                                            catch (e_3_1) { e_3 = { error: e_3_1 }; }
-                                            finally {
-                                                try {
-                                                    if (_d && !_d.done && (_f = _c.return)) _f.call(_c);
-                                                }
-                                                finally { if (e_3) throw e_3.error; }
-                                            }
+                                        finally { if (e_2) throw e_2.error; }
+                                        return [7 /*endfinally*/];
+                                    case 12: return [3 /*break*/, 20];
+                                    case 13:
+                                        _g.trys.push([13, 18, 19, 20]);
+                                        _c = __values(stateBase.operations), _d = _c.next();
+                                        _g.label = 14;
+                                    case 14:
+                                        if (!!_d.done) return [3 /*break*/, 17];
+                                        operation = _d.value;
+                                        if (!operation.amount.isLessThanOrEqualTo(0)) return [3 /*break*/, 16];
+                                        // Income event (Open trade or Rebuy open position)
+                                        return [4 /*yield*/, this.calculateOutgoingEvent(accumulatorValue, operation, stateBase, currentItem)];
+                                    case 15:
+                                        // Income event (Open trade or Rebuy open position)
+                                        _g.sent();
+                                        _g.label = 16;
+                                    case 16:
+                                        _d = _c.next();
+                                        return [3 /*break*/, 14];
+                                    case 17: return [3 /*break*/, 20];
+                                    case 18:
+                                        e_3_1 = _g.sent();
+                                        e_3 = { error: e_3_1 };
+                                        return [3 /*break*/, 20];
+                                    case 19:
+                                        try {
+                                            if (_d && !_d.done && (_f = _c.return)) _f.call(_c);
                                         }
-                                        return [2 /*return*/, accumulatorValue];
+                                        finally { if (e_3) throw e_3.error; }
+                                        return [7 /*endfinally*/];
+                                    case 20: return [2 /*return*/, accumulatorValue];
                                 }
                             });
                         }); }, Promise.resolve(initValue))];
                 });
             });
         };
-        TradesBuilderV2.prototype.calculateOutgoingEvent = function (accumulatorValue, operation, state, balanceBeforeTransaction) {
+        TradesBuilderV2.prototype.calculateOutgoingEvent = function (accumulatorValue, operation, stateBase, currentItem) {
             var _a;
-            var openTradeIndex = (((_a = accumulatorValue[operation.address]) === null || _a === void 0 ? void 0 : _a.trades) || []).findIndex(function (x) { return x.tradeStatus === exports.TradeStatus.OPEN; });
-            if (openTradeIndex >= 0) {
-                this.calculateOperationWithOpenTrade(operation, state, accumulatorValue[operation.address], openTradeIndex, balanceBeforeTransaction);
-            }
+            return __awaiter(this, void 0, void 0, function () {
+                var openTradeIndex, currentItemParsed, stateParsed;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            openTradeIndex = (((_a = accumulatorValue[operation.address]) === null || _a === void 0 ? void 0 : _a.trades) || []).findIndex(function (x) { return x.tradeStatus === exports.TradeStatus.OPEN; });
+                            if (!(openTradeIndex >= 0)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.parseTransactionWallet.parseTransactionBalancePriceSingle(currentItem, true)];
+                        case 1:
+                            currentItemParsed = _b.sent();
+                            return [4 /*yield*/, this.getTokenOperationPrice(stateBase, currentItemParsed)];
+                        case 2:
+                            stateParsed = _b.sent();
+                            this.calculateOperationWithOpenTrade(operation, stateParsed, accumulatorValue[operation.address], openTradeIndex, currentItemParsed.balanceBeforeTransaction);
+                            _b.label = 3;
+                        case 3: return [2 /*return*/];
+                    }
+                });
+            });
         };
-        TradesBuilderV2.prototype.calculateIncomeEvent = function (accumulatorValue, operation, state, balanceBeforeTransaction) {
-            if (accumulatorValue[operation.address]) {
-                var openTradeIndex = accumulatorValue[operation.address].trades.findIndex(function (x) { return x.tradeStatus === exports.TradeStatus.OPEN; });
-                if (openTradeIndex >= 0) {
-                    this.calculateOperationWithOpenTrade(operation, state, accumulatorValue[operation.address], openTradeIndex, balanceBeforeTransaction);
-                }
-                else {
-                    accumulatorValue[operation.address].trades.push(this.openNewTrade(state, operation, balanceBeforeTransaction));
-                }
-            }
-            else {
-                accumulatorValue[operation.address] = {
-                    tokenAddress: operation.address,
-                    trades: [this.openNewTrade(state, operation, balanceBeforeTransaction)],
-                };
-            }
+        TradesBuilderV2.prototype.calculateIncomeEvent = function (accumulatorValue, operation, stateBase, currentItem) {
+            return __awaiter(this, void 0, void 0, function () {
+                var currentItemParsed, stateParsed, openTradeIndex;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.parseTransactionWallet.parseTransactionBalancePriceSingle(currentItem, true)];
+                        case 1:
+                            currentItemParsed = _a.sent();
+                            return [4 /*yield*/, this.getTokenOperationPrice(stateBase, currentItemParsed)];
+                        case 2:
+                            stateParsed = _a.sent();
+                            if (accumulatorValue[operation.address]) {
+                                openTradeIndex = accumulatorValue[operation.address].trades.findIndex(function (x) { return x.tradeStatus === exports.TradeStatus.OPEN; });
+                                if (openTradeIndex >= 0) {
+                                    this.calculateOperationWithOpenTrade(operation, stateParsed, accumulatorValue[operation.address], openTradeIndex, currentItemParsed.balanceBeforeTransaction);
+                                }
+                                else {
+                                    accumulatorValue[operation.address].trades.push(this.openNewTrade(stateParsed, operation, currentItemParsed.balanceBeforeTransaction));
+                                }
+                            }
+                            else {
+                                accumulatorValue[operation.address] = {
+                                    tokenAddress: operation.address,
+                                    trades: [this.openNewTrade(stateParsed, operation, currentItemParsed.balanceBeforeTransaction)],
+                                };
+                            }
+                            return [2 /*return*/];
+                    }
+                });
+            });
         };
         TradesBuilderV2.prototype.calculateOperationWithOpenTrade = function (operation, state, data, openTradeIndex, balanceBeforeTransaction) {
             var tradeEvent = this.createNewTradeEvent(state, operation, balanceBeforeTransaction, data.trades[openTradeIndex]);
@@ -1145,7 +1410,7 @@
         TradesBuilderV2.prototype.getTokenOperationState = function (currentData) {
             var _a, _b;
             return __awaiter(this, void 0, void 0, function () {
-                var state, balancesDifferencesData, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_5;
+                var state, balancesDifferencesData, normalTransaction, uniswapTransactionData, e_5;
                 return __generator(this, function (_c) {
                     switch (_c.label) {
                         case 0:
@@ -1155,87 +1420,43 @@
                             if (!(currentData.normalTransactions &&
                                 ((_b = (_a = currentData.normalTransactions[0]) === null || _a === void 0 ? void 0 : _a.to) === null || _b === void 0 ? void 0 : _b.toLowerCase()) === defaultConfig.uniswap.uniswapRouterAddress)) return [3 /*break*/, 2];
                             normalTransaction = currentData.normalTransactions[0];
-                            return [4 /*yield*/, this.services.uniswapService.getUniswapTransactionByIdLimiter(normalTransaction.hash, +normalTransaction.blockNumber)];
+                            return [4 /*yield*/, this.services.uniswapService.getUniswapTransactionByIdLimiter({
+                                    transactionId: normalTransaction.hash,
+                                    blockNumber: +normalTransaction.blockNumber,
+                                })];
                         case 1:
                             uniswapTransactionData = _c.sent();
                             // Catch Only correct Uniswap Swaps (for trades) Exclude add or remove from liquidity
                             if (uniswapTransactionData) {
-                                operationPriceUniRaw = this.operationPriceFromUniswap(uniswapTransactionData);
-                                transactionFeeETH = currentData.feeInETH;
-                                transactionFeeUSD = currentData.feeInETH.multipliedBy(uniswapTransactionData.ethPrice);
-                                operationPriceIncludeFee = this.operationPriceWithFee(operationPriceUniRaw, transactionFeeETH, transactionFeeUSD);
                                 state = {
                                     isVirtualTransaction: currentData.isVirtualTransaction,
                                     operations: balancesDifferencesData.differences,
                                     operationInfo: balancesDifferencesData.operationInfo,
-                                    amount: {
-                                        raw: {
-                                            ETH: operationPriceUniRaw.amountInETH,
-                                            USD: operationPriceUniRaw.amountInUSD,
-                                        },
-                                        withFee: {
-                                            ETH: operationPriceIncludeFee.amountInETH,
-                                            USD: operationPriceIncludeFee.amountInUSD,
-                                        },
-                                    },
                                     isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.first,
                                     timeStamp: normalTransaction.timeStamp,
                                     transactionHash: normalTransaction.hash,
-                                    transactionFeeETH: transactionFeeETH,
-                                    transactionFeeUSD: transactionFeeUSD,
                                 };
                             }
                             else {
-                                operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferencesData.differences, currentData.balance);
-                                transactionFeeETH = currentData.feeInETH;
-                                transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
-                                operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
+                                // Catch add or remove from liquidity Uniswap
                                 state = {
                                     isVirtualTransaction: currentData.isVirtualTransaction,
                                     operations: balancesDifferencesData.differences,
                                     operationInfo: balancesDifferencesData.operationInfo,
-                                    amount: {
-                                        raw: {
-                                            ETH: operationPriceOtherRaw.amountInETH,
-                                            USD: operationPriceOtherRaw.amountInUSD,
-                                        },
-                                        withFee: {
-                                            ETH: operationPriceIncludeFee.amountInETH,
-                                            USD: operationPriceIncludeFee.amountInUSD,
-                                        },
-                                    },
                                     isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.second,
                                     timeStamp: normalTransaction.timeStamp,
                                     transactionHash: normalTransaction.hash,
-                                    transactionFeeETH: transactionFeeETH,
-                                    transactionFeeUSD: transactionFeeUSD,
                                 };
                             }
                             return [3 /*break*/, 3];
                         case 2:
-                            operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferencesData.differences, currentData.balance);
-                            transactionFeeETH = currentData.feeInETH;
-                            transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
-                            operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
                             state = {
                                 isVirtualTransaction: currentData.isVirtualTransaction,
                                 operations: balancesDifferencesData.differences,
                                 operationInfo: balancesDifferencesData.operationInfo,
-                                amount: {
-                                    raw: {
-                                        ETH: operationPriceOtherRaw.amountInETH,
-                                        USD: operationPriceOtherRaw.amountInUSD,
-                                    },
-                                    withFee: {
-                                        ETH: operationPriceIncludeFee.amountInETH,
-                                        USD: operationPriceIncludeFee.amountInUSD,
-                                    },
-                                },
                                 isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.third,
                                 timeStamp: currentData.timeStamp,
                                 transactionHash: currentData.hash,
-                                transactionFeeETH: transactionFeeETH,
-                                transactionFeeUSD: transactionFeeUSD,
                             };
                             _c.label = 3;
                         case 3: return [2 /*return*/, state];
@@ -1247,11 +1468,91 @@
                 });
             });
         };
+        TradesBuilderV2.prototype.getTokenOperationPrice = function (stateBase, currentData) {
+            var _a, _b;
+            return __awaiter(this, void 0, void 0, function () {
+                var stateWithPrices, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_6;
+                return __generator(this, function (_c) {
+                    switch (_c.label) {
+                        case 0:
+                            _c.trys.push([0, 4, , 5]);
+                            stateWithPrices = void 0;
+                            if (!(currentData.normalTransactions &&
+                                ((_b = (_a = currentData.normalTransactions[0]) === null || _a === void 0 ? void 0 : _a.to) === null || _b === void 0 ? void 0 : _b.toLowerCase()) === defaultConfig.uniswap.uniswapRouterAddress)) return [3 /*break*/, 2];
+                            normalTransaction = currentData.normalTransactions[0];
+                            return [4 /*yield*/, this.services.uniswapService.getUniswapTransactionByIdLimiter({
+                                    transactionId: normalTransaction.hash,
+                                    blockNumber: +normalTransaction.blockNumber,
+                                })];
+                        case 1:
+                            uniswapTransactionData = _c.sent();
+                            // Catch Only correct Uniswap Swaps (for trades) Exclude add or remove from liquidity
+                            if (uniswapTransactionData) {
+                                operationPriceUniRaw = this.operationPriceFromUniswap(uniswapTransactionData);
+                                transactionFeeETH = currentData.feeInETH;
+                                transactionFeeUSD = currentData.feeInETH.multipliedBy(uniswapTransactionData.ethPrice);
+                                operationPriceIncludeFee = this.operationPriceWithFee(operationPriceUniRaw, transactionFeeETH, transactionFeeUSD);
+                                stateWithPrices = __assign(__assign({}, stateBase), { amount: {
+                                        raw: {
+                                            ETH: operationPriceUniRaw.amountInETH,
+                                            USD: operationPriceUniRaw.amountInUSD,
+                                        },
+                                        withFee: {
+                                            ETH: operationPriceIncludeFee.amountInETH,
+                                            USD: operationPriceIncludeFee.amountInUSD,
+                                        },
+                                    }, transactionFeeETH: transactionFeeETH,
+                                    transactionFeeUSD: transactionFeeUSD });
+                            }
+                            else {
+                                operationPriceOtherRaw = this.operationPriceFromOtherSource(stateBase.operations, currentData.balance);
+                                transactionFeeETH = currentData.feeInETH;
+                                transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
+                                operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
+                                stateWithPrices = __assign(__assign({}, stateBase), { amount: {
+                                        raw: {
+                                            ETH: operationPriceOtherRaw.amountInETH,
+                                            USD: operationPriceOtherRaw.amountInUSD,
+                                        },
+                                        withFee: {
+                                            ETH: operationPriceIncludeFee.amountInETH,
+                                            USD: operationPriceIncludeFee.amountInUSD,
+                                        },
+                                    }, transactionFeeETH: transactionFeeETH,
+                                    transactionFeeUSD: transactionFeeUSD });
+                            }
+                            return [3 /*break*/, 3];
+                        case 2:
+                            operationPriceOtherRaw = this.operationPriceFromOtherSource(stateBase.operations, currentData.balance);
+                            transactionFeeETH = currentData.feeInETH;
+                            transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
+                            operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
+                            stateWithPrices = __assign(__assign({}, stateBase), { amount: {
+                                    raw: {
+                                        ETH: operationPriceOtherRaw.amountInETH,
+                                        USD: operationPriceOtherRaw.amountInUSD,
+                                    },
+                                    withFee: {
+                                        ETH: operationPriceIncludeFee.amountInETH,
+                                        USD: operationPriceIncludeFee.amountInUSD,
+                                    },
+                                }, transactionFeeETH: transactionFeeETH,
+                                transactionFeeUSD: transactionFeeUSD });
+                            _c.label = 3;
+                        case 3: return [2 /*return*/, stateWithPrices];
+                        case 4:
+                            e_6 = _c.sent();
+                            throw e_6;
+                        case 5: return [2 /*return*/];
+                    }
+                });
+            });
+        };
         TradesBuilderV2.prototype.operationPriceWithFee = function (operationPrice, feeETH, feeUSD) {
             return __assign(__assign({}, operationPrice), { amountInUSD: operationPrice.amountInUSD.plus(feeUSD), amountInETH: operationPrice.amountInETH.plus(feeETH) });
         };
         TradesBuilderV2.prototype.balanceDifferences = function (currentBalance, beforeBalance, parsedFeeInETH) {
-            var e_6, _a;
+            var e_7, _a;
             var _b, _c, _d, _e;
             var tokensAddress = lodash__default['default'].uniq(__spreadArray(__spreadArray([], __read(Object.keys(currentBalance))), __read(Object.keys(beforeBalance))));
             var diffs = [];
@@ -1293,12 +1594,12 @@
                     }
                 }
             }
-            catch (e_6_1) { e_6 = { error: e_6_1 }; }
+            catch (e_7_1) { e_7 = { error: e_7_1 }; }
             finally {
                 try {
                     if (tokensAddress_1_1 && !tokensAddress_1_1.done && (_a = tokensAddress_1.return)) _a.call(tokensAddress_1);
                 }
-                finally { if (e_6) throw e_6.error; }
+                finally { if (e_7) throw e_7.error; }
             }
             return {
                 differences: diffs.filter(function (x) { return !stableCoinList.some(function (y) { return y.address === x.address.toLowerCase(); }); }),
@@ -1567,6 +1868,449 @@
         return CalculateBalance;
     }());
 
+    var TradesBuilderV2Prebuild = /** @class */ (function () {
+        function TradesBuilderV2Prebuild(services, config) {
+            this.services = services;
+            this.config = config;
+            this.behaviourConfig = generateBehaviourConfig(config);
+        }
+        TradesBuilderV2Prebuild.prototype.buildTrades = function (data) {
+            return __awaiter(this, void 0, void 0, function () {
+                var rawResult, openTrades, withVirtualTrades, virtualTrade;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.behaviourIterator(data)];
+                        case 1:
+                            rawResult = _a.sent();
+                            openTrades = Object.values(rawResult)
+                                .map(function (x) { return x.trades[x.trades.length - 1]; })
+                                .filter(function (x) { return x.tradeStatus === exports.TradeStatus.OPEN; });
+                            if (!(openTrades.length > 0)) return [3 /*break*/, 4];
+                            return [4 /*yield*/, this.generateVirtualTrades(openTrades, data[data.length - 1])];
+                        case 2:
+                            virtualTrade = _a.sent();
+                            return [4 /*yield*/, this.behaviourIterator(virtualTrade, rawResult)];
+                        case 3:
+                            withVirtualTrades = _a.sent();
+                            _a.label = 4;
+                        case 4: return [2 /*return*/, withVirtualTrades ? withVirtualTrades : rawResult];
+                    }
+                });
+            });
+        };
+        TradesBuilderV2Prebuild.prototype.generateVirtualTrades = function (openTrades, lastGroupedTransaction) {
+            return __awaiter(this, void 0, void 0, function () {
+                var currentBlockNumber, e_1;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 3]);
+                            return [4 /*yield*/, this.services.web3Service.getCurrentBlockNumberLimiter()];
+                        case 1:
+                            currentBlockNumber = _a.sent();
+                            return [2 /*return*/, this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber)];
+                        case 2:
+                            e_1 = _a.sent();
+                            throw e_1;
+                        case 3: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        TradesBuilderV2Prebuild.prototype.generateVirtualTransactions = function (openTrades, lastGroupedTransaction, currentBlockNumber) {
+            var _this = this;
+            return openTrades.reduce(function (accum, value, index) {
+                var balanceBeforeTransaction = lastGroupedTransaction.balance;
+                var result = {
+                    normalTransactions: [],
+                    internalTransactions: [],
+                    erc20Transactions: [],
+                    erc721Transactions: [],
+                    balanceBeforeTransaction: balanceBeforeTransaction,
+                    balance: _this.generateBalanceDiffForVirtualTradePnl(value, balanceBeforeTransaction),
+                    blockNumber: currentBlockNumber - 10,
+                    previousTransactionBlockNumber: lastGroupedTransaction.blockNumber,
+                    feeInETH: new BigNumber__default['default'](0),
+                    isVirtualTransaction: true,
+                    hash: "AUTO_CLOSE_TRADE_TRANSACTION " + (index + 1),
+                    timeStamp: moment__default['default']().unix().toString(),
+                };
+                accum.push(result);
+                return accum;
+            }, []);
+        };
+        TradesBuilderV2Prebuild.prototype.generateBalanceDiffForVirtualTradePnl = function (trade, balance) {
+            var _a;
+            return __assign(__assign({}, Object.values(balance).reduce(function (accum, value) {
+                accum[value.address] = {
+                    symbol: value.symbol,
+                    name: value.name,
+                    address: value.address,
+                    decimals: value.decimals,
+                    amount: value.amount.negated().negated(),
+                };
+                return accum;
+            }, {})), (_a = {}, _a[trade.tokenAddress] = {
+                symbol: balance[trade.tokenAddress].symbol,
+                name: balance[trade.tokenAddress].name,
+                address: balance[trade.tokenAddress].address,
+                decimals: balance[trade.tokenAddress].decimals,
+                amount: balance[trade.tokenAddress].amount.minus(trade.balance),
+            }, _a));
+        };
+        TradesBuilderV2Prebuild.prototype.behaviourIterator = function (data, initValue) {
+            if (initValue === void 0) { initValue = {}; }
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    // console.log('behaviourIterator', data.length);
+                    return [2 /*return*/, data.reduce(function (accumulatorValuePromise, currentItem, index) { return __awaiter(_this, void 0, void 0, function () {
+                            var accumulatorValue, state, _a, _b, operation, _c, _d, operation;
+                            var e_2, _e, e_3, _f;
+                            return __generator(this, function (_g) {
+                                switch (_g.label) {
+                                    case 0: return [4 /*yield*/, accumulatorValuePromise];
+                                    case 1:
+                                        accumulatorValue = _g.sent();
+                                        // Catch and Skip Error transaction
+                                        if (this.isErrorTransaction(currentItem)) {
+                                            return [2 /*return*/, accumulatorValue];
+                                        }
+                                        return [4 /*yield*/, this.getTokenOperationState(currentItem)];
+                                    case 2:
+                                        state = _g.sent();
+                                        if (state.isTrustedProvider) {
+                                            try {
+                                                // Uniswap transaction
+                                                for (_a = __values(state.operations), _b = _a.next(); !_b.done; _b = _a.next()) {
+                                                    operation = _b.value;
+                                                    if (operation.amount.isGreaterThan(0)) {
+                                                        // Income event (Open trade or Rebuy open position)
+                                                        this.calculateIncomeEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
+                                                    }
+                                                    else {
+                                                        this.calculateOutgoingEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
+                                                    }
+                                                }
+                                            }
+                                            catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                                            finally {
+                                                try {
+                                                    if (_b && !_b.done && (_e = _a.return)) _e.call(_a);
+                                                }
+                                                finally { if (e_2) throw e_2.error; }
+                                            }
+                                        }
+                                        else {
+                                            try {
+                                                // Other transaction
+                                                for (_c = __values(state.operations), _d = _c.next(); !_d.done; _d = _c.next()) {
+                                                    operation = _d.value;
+                                                    if (operation.amount.isLessThanOrEqualTo(0)) {
+                                                        // Income event (Open trade or Rebuy open position)
+                                                        this.calculateOutgoingEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
+                                                    }
+                                                }
+                                            }
+                                            catch (e_3_1) { e_3 = { error: e_3_1 }; }
+                                            finally {
+                                                try {
+                                                    if (_d && !_d.done && (_f = _c.return)) _f.call(_c);
+                                                }
+                                                finally { if (e_3) throw e_3.error; }
+                                            }
+                                        }
+                                        return [2 /*return*/, accumulatorValue];
+                                }
+                            });
+                        }); }, Promise.resolve(initValue))];
+                });
+            });
+        };
+        TradesBuilderV2Prebuild.prototype.calculateOutgoingEvent = function (accumulatorValue, operation, state, balanceBeforeTransaction) {
+            var _a;
+            var openTradeIndex = (((_a = accumulatorValue[operation.address]) === null || _a === void 0 ? void 0 : _a.trades) || []).findIndex(function (x) { return x.tradeStatus === exports.TradeStatus.OPEN; });
+            if (openTradeIndex >= 0) {
+                this.calculateOperationWithOpenTrade(operation, state, accumulatorValue[operation.address], openTradeIndex, balanceBeforeTransaction);
+            }
+        };
+        TradesBuilderV2Prebuild.prototype.calculateIncomeEvent = function (accumulatorValue, operation, state, balanceBeforeTransaction) {
+            if (accumulatorValue[operation.address]) {
+                var openTradeIndex = accumulatorValue[operation.address].trades.findIndex(function (x) { return x.tradeStatus === exports.TradeStatus.OPEN; });
+                if (openTradeIndex >= 0) {
+                    this.calculateOperationWithOpenTrade(operation, state, accumulatorValue[operation.address], openTradeIndex, balanceBeforeTransaction);
+                }
+                else {
+                    accumulatorValue[operation.address].trades.push(this.openNewTrade(state, operation, balanceBeforeTransaction));
+                }
+            }
+            else {
+                accumulatorValue[operation.address] = {
+                    tokenAddress: operation.address,
+                    trades: [this.openNewTrade(state, operation, balanceBeforeTransaction)],
+                };
+            }
+        };
+        TradesBuilderV2Prebuild.prototype.calculateOperationWithOpenTrade = function (operation, state, data, openTradeIndex, balanceBeforeTransaction) {
+            var tradeEvent = this.createNewTradeEvent(state, operation, balanceBeforeTransaction, data.trades[openTradeIndex]);
+            data.trades[openTradeIndex].balance = data.trades[openTradeIndex].balance.plus(operation.amount);
+            data.trades[openTradeIndex].tradeEvents.push(tradeEvent);
+            if (tradeEvent.tradeType === exports.TradeType.SELL) {
+                this.createIterateSellEvents(tradeEvent, data, openTradeIndex);
+            }
+            if (data.trades[openTradeIndex].balance.isLessThanOrEqualTo(0)) {
+                data.trades[openTradeIndex].tradeStatus = exports.TradeStatus.CLOSE;
+                data.trades[openTradeIndex].closeTimeStamp = state.timeStamp;
+            }
+        };
+        TradesBuilderV2Prebuild.prototype.createIterateSellEvents = function (tradeEvent, data, openTradeIndex) {
+            var e_4, _a;
+            var sellOperationAmount = tradeEvent.amount.negated();
+            try {
+                // write sell event from buy
+                for (var _b = __values(data.trades[openTradeIndex].tradeEvents.entries()), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var _d = __read(_c.value, 2), index = _d[0], value = _d[1];
+                    if (value.tradeType === exports.TradeType.BUY && value.balance.isGreaterThan(0)) {
+                        var amountResult = value.balance.minus(sellOperationAmount);
+                        if (amountResult.isGreaterThanOrEqualTo(0)) {
+                            value.balance = value.balance.minus(sellOperationAmount);
+                            var operation = {
+                                sellTransactionHash: tradeEvent.transactionHash,
+                                amount: new BigNumber__default['default'](sellOperationAmount.toString()),
+                                profit: {
+                                    usd: new BigNumber__default['default'](0),
+                                    eth: new BigNumber__default['default'](0),
+                                },
+                                profitLoss: {
+                                    usd: new BigNumber__default['default'](0),
+                                    eth: new BigNumber__default['default'](0),
+                                },
+                                tokenInfo: tradeEvent.tokenInfo,
+                            };
+                            value.sellOperations.push(operation);
+                            tradeEvent.sellOperations.push(operation);
+                            sellOperationAmount = new BigNumber__default['default'](0);
+                            break;
+                        }
+                        else {
+                            if (value.balance.isGreaterThan(0)) {
+                                var operation = {
+                                    sellTransactionHash: tradeEvent.transactionHash,
+                                    amount: new BigNumber__default['default'](value.balance.toString()),
+                                    profit: {
+                                        usd: new BigNumber__default['default'](0),
+                                        eth: new BigNumber__default['default'](0),
+                                    },
+                                    profitLoss: {
+                                        usd: new BigNumber__default['default'](0),
+                                        eth: new BigNumber__default['default'](0),
+                                    },
+                                    tokenInfo: tradeEvent.tokenInfo,
+                                };
+                                value.sellOperations.push(operation);
+                                tradeEvent.sellOperations.push(operation);
+                                sellOperationAmount = sellOperationAmount.minus(value.balance);
+                                value.balance = new BigNumber__default['default'](0);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (e_4_1) { e_4 = { error: e_4_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                }
+                finally { if (e_4) throw e_4.error; }
+            }
+        };
+        TradesBuilderV2Prebuild.prototype.openNewTrade = function (state, operation, balanceBeforeTransaction) {
+            return {
+                balance: new BigNumber__default['default'](operation.amount),
+                startDep: { amountInETH: new BigNumber__default['default'](0), amountInUSD: new BigNumber__default['default'](0) },
+                tokenAddress: operation.address,
+                spendingUSD: new BigNumber__default['default'](0),
+                spendingETH: new BigNumber__default['default'](0),
+                incomeUSD: new BigNumber__default['default'](0),
+                incomeETH: new BigNumber__default['default'](0),
+                tradeStatus: exports.TradeStatus.OPEN,
+                tradeEvents: [this.createNewTradeEvent(state, operation, balanceBeforeTransaction)],
+                openTimeStamp: state.timeStamp,
+                profitLossFromUSD: new BigNumber__default['default'](0),
+                profitLossFromETH: new BigNumber__default['default'](0),
+                profitFromUSD: new BigNumber__default['default'](0),
+                profitFromETH: new BigNumber__default['default'](0),
+                points: new BigNumber__default['default'](0),
+            };
+        };
+        TradesBuilderV2Prebuild.prototype.createNewTradeEvent = function (state, operation, balanceBeforeTransaction, trade) {
+            var startDep = { amountInETH: new BigNumber__default['default'](0), amountInUSD: new BigNumber__default['default'](0) };
+            var tokenInfo = this.createTokenInfo(operation);
+            var tradeType = this.tradeTypeSwitcher(operation.amount);
+            var price = {
+                raw: {
+                    usd: new BigNumber__default['default'](0),
+                    eth: new BigNumber__default['default'](0),
+                },
+                withFee: {
+                    usd: new BigNumber__default['default'](0),
+                    eth: new BigNumber__default['default'](0),
+                },
+            };
+            return {
+                tradeType: tradeType,
+                amount: new BigNumber__default['default'](operation.amount),
+                balance: tradeType === exports.TradeType.BUY ? new BigNumber__default['default'](operation.amount) : new BigNumber__default['default'](0),
+                averageStartDep: {
+                    usd: new BigNumber__default['default'](0),
+                    eth: new BigNumber__default['default'](0),
+                },
+                tokenInfo: tokenInfo,
+                sellOperations: [],
+                isVirtualTransaction: state.isVirtualTransaction,
+                transactionHash: state.transactionHash,
+                timeStamp: state.timeStamp,
+                costUSD: new BigNumber__default['default'](0),
+                costETH: new BigNumber__default['default'](0),
+                transactionFeeETH: new BigNumber__default['default'](0),
+                transactionFeeUSD: new BigNumber__default['default'](0),
+                price: price,
+                startDep: startDep,
+                operationInfo: state.operationInfo,
+                balances: state.balances,
+                balancesBeforeTransaction: state.balancesBeforeTransaction,
+                blockNumber: state.blockNumber,
+            };
+        };
+        TradesBuilderV2Prebuild.prototype.createTokenInfo = function (operation) {
+            return {
+                symbol: operation.symbol,
+                name: operation.name,
+                address: operation.address,
+                decimals: operation.decimals,
+            };
+        };
+        TradesBuilderV2Prebuild.prototype.tradeTypeSwitcher = function (amount) {
+            if (amount.isGreaterThan(0)) {
+                return exports.TradeType.BUY;
+            }
+            else {
+                return exports.TradeType.SELL;
+            }
+        };
+        TradesBuilderV2Prebuild.prototype.isErrorTransaction = function (data) {
+            if (__spreadArray(__spreadArray(__spreadArray(__spreadArray([], __read((data.normalTransactions || []))), __read((data.internalTransactions || []))), __read((data.erc20Transactions || []))), __read((data.erc721Transactions || []))).some(function (x) { return (x === null || x === void 0 ? void 0 : x.isError) === '1'; })) {
+                return true;
+            }
+            return false;
+        };
+        TradesBuilderV2Prebuild.prototype.getTokenOperationState = function (currentData) {
+            var _a, _b;
+            return __awaiter(this, void 0, void 0, function () {
+                var state, balancesDifferencesData, normalTransaction;
+                return __generator(this, function (_c) {
+                    try {
+                        state = void 0;
+                        balancesDifferencesData = this.balanceDifferences(currentData.balance, currentData.balanceBeforeTransaction, currentData.feeInETH);
+                        if (currentData.normalTransactions &&
+                            ((_b = (_a = currentData.normalTransactions[0]) === null || _a === void 0 ? void 0 : _a.to) === null || _b === void 0 ? void 0 : _b.toLowerCase()) === defaultConfig.uniswap.uniswapRouterAddress) {
+                            normalTransaction = currentData.normalTransactions[0];
+                            // Catch Only correct Uniswap Swaps (for trades) Exclude add or remove from liquidity
+                            // Catch add or remove from liquidity Uniswap
+                            // !!! Prebuild trades in some cases can incorrect build pre trades, because
+                            // we can't detect remove liqudity and add to liquidity without request for uni transaction info
+                            state = {
+                                isVirtualTransaction: currentData.isVirtualTransaction,
+                                operations: balancesDifferencesData.differences,
+                                operationInfo: balancesDifferencesData.operationInfo,
+                                isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.first,
+                                timeStamp: normalTransaction.timeStamp,
+                                transactionHash: normalTransaction.hash,
+                                balances: currentData.balance,
+                                balancesBeforeTransaction: currentData.balanceBeforeTransaction,
+                                blockNumber: currentData.blockNumber,
+                            };
+                        }
+                        else {
+                            state = {
+                                isVirtualTransaction: currentData.isVirtualTransaction,
+                                operations: balancesDifferencesData.differences,
+                                operationInfo: balancesDifferencesData.operationInfo,
+                                isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.third,
+                                timeStamp: currentData.timeStamp,
+                                transactionHash: currentData.hash,
+                                balances: currentData.balance,
+                                balancesBeforeTransaction: currentData.balanceBeforeTransaction,
+                                blockNumber: currentData.blockNumber,
+                            };
+                        }
+                        return [2 /*return*/, state];
+                    }
+                    catch (e) {
+                        throw e;
+                    }
+                    return [2 /*return*/];
+                });
+            });
+        };
+        TradesBuilderV2Prebuild.prototype.balanceDifferences = function (currentBalance, beforeBalance, parsedFeeInETH) {
+            var e_5, _a;
+            var _b, _c, _d, _e;
+            var tokensAddress = lodash__default['default'].uniq(__spreadArray(__spreadArray([], __read(Object.keys(currentBalance))), __read(Object.keys(beforeBalance))));
+            var diffs = [];
+            var operationInfo = {
+                sent: [],
+                received: [],
+            };
+            try {
+                for (var tokensAddress_1 = __values(tokensAddress), tokensAddress_1_1 = tokensAddress_1.next(); !tokensAddress_1_1.done; tokensAddress_1_1 = tokensAddress_1.next()) {
+                    var key = tokensAddress_1_1.value;
+                    if (((_b = currentBalance[key]) === null || _b === void 0 ? void 0 : _b.amount) &&
+                        !(currentBalance[key].amount.toString() === ((_d = (_c = beforeBalance[key]) === null || _c === void 0 ? void 0 : _c.amount) === null || _d === void 0 ? void 0 : _d.toString()))) {
+                        var item = {
+                            symbol: currentBalance[key].symbol,
+                            name: currentBalance[key].name,
+                            address: currentBalance[key].address.toLowerCase(),
+                            decimals: currentBalance[key].decimals,
+                            amount: ((_e = beforeBalance[key]) === null || _e === void 0 ? void 0 : _e.amount)
+                                ? currentBalance[key].amount.minus(beforeBalance[key].amount)
+                                : new BigNumber__default['default'](currentBalance[key].amount.toString()),
+                        };
+                        // Exclude Fee From Balance Differences
+                        if (item.address === ethDefaultInfo.address) {
+                            if (item.amount.isLessThan(0)) {
+                                item.amount = item.amount.plus(parsedBalanceToRaw(parsedFeeInETH, +ethDefaultInfo.decimals));
+                            }
+                            if (item.amount.isGreaterThan(0)) {
+                                item.amount = item.amount.minus(parsedBalanceToRaw(parsedFeeInETH, +ethDefaultInfo.decimals));
+                            }
+                        }
+                        // set operationInfo
+                        if (item.amount.isLessThan(0)) {
+                            operationInfo.sent.push(item);
+                        }
+                        if (item.amount.isGreaterThan(0)) {
+                            operationInfo.received.push(item);
+                        }
+                        diffs.push(item);
+                    }
+                }
+            }
+            catch (e_5_1) { e_5 = { error: e_5_1 }; }
+            finally {
+                try {
+                    if (tokensAddress_1_1 && !tokensAddress_1_1.done && (_a = tokensAddress_1.return)) _a.call(tokensAddress_1);
+                }
+                finally { if (e_5) throw e_5.error; }
+            }
+            return {
+                differences: diffs.filter(function (x) { return !stableCoinList.some(function (y) { return y.address === x.address.toLowerCase(); }); }),
+                operationInfo: operationInfo,
+            };
+        };
+        return TradesBuilderV2Prebuild;
+    }());
+
     var ParserBase = /** @class */ (function () {
         function ParserBase(services, config) {
             this.services = services;
@@ -1574,11 +2318,13 @@
             this.rawTransactions = [];
             this.parserProgress = new rxjs.BehaviorSubject(0);
             this.uniswapRequestCount = this.services.uniswapService.requestCounter.asObservable().pipe(operators.auditTime(1000));
+            this.estimatedUniswapRequests = new rxjs.BehaviorSubject(0);
             this.getTransaction = new GetTransaction(this.services.etherscanService);
             this.parseTransaction = new ParseTransaction(this.services.uniswapService);
             this.filterTransaction = new FilterTransaction();
             this.transformTransaction = new TransformTransaction();
             this.tradesBuilderV2 = new TradesBuilderV2(this.services, this.config);
+            this.tradesBuilderV2Prebuild = new TradesBuilderV2Prebuild(this.services, this.config);
             this.calculateBalance = new CalculateBalance();
             this.calculateTransaction = new CalculateTransaction();
         }
@@ -1599,8 +2345,7 @@
                             return [3 /*break*/, 3];
                         case 2:
                             e_1 = _a.sent();
-                            this.parserProgress.complete();
-                            this.services.uniswapService.requestCounter.complete();
+                            this.completeStreams();
                             console.log('🔥 error: %o', e_1);
                             throw e_1;
                         case 3: return [2 /*return*/];
@@ -1611,35 +2356,47 @@
         ParserBase.prototype.process = function () {
             var _a;
             return __awaiter(this, void 0, void 0, function () {
-                var rawTransactions, transactionStep1, transactionStep2, transactionStep3, currentDeposit, startDeposit, lastTransactionBlockNumber, transactionsCount, tradesCount, totalIndicators, totalPoints, e_2;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
+                var rawTransactions, preBuildTrades, cacheRequestData, transactionStep2, transactionStep3, currentDeposit, _b, _c, startDeposit, _d, _e, lastTransactionBlockNumber, transactionsCount, tradesCount, totalIndicators, totalPoints, e_2;
+                return __generator(this, function (_f) {
+                    switch (_f.label) {
                         case 0:
-                            _b.trys.push([0, 3, , 4]);
+                            _f.trys.push([0, 6, , 7]);
                             rawTransactions = this.rawTransactions;
-                            if (!rawTransactions) {
-                                throw new Error('Etherscan transaction download error');
+                            if (!rawTransactions || rawTransactions.length <= 0) {
+                                this.completeStreams();
+                                return [2 /*return*/, this.noTransactionsResult()];
                             }
+                            return [4 /*yield*/, this.tradesBuilderV2Prebuild.buildTrades(rawTransactions)];
+                        case 1:
+                            preBuildTrades = _f.sent();
+                            cacheRequestData = this.transformTransaction.buildCacheRequestData(preBuildTrades, rawTransactions);
+                            this.estimatedUniswapRequests.next(cacheRequestData.requestsCount);
                             // set progress
                             this.parserProgress.next(85);
-                            return [4 /*yield*/, this.parseTransaction.parseTransactionBalancePrice(rawTransactions)];
-                        case 1:
-                            transactionStep1 = _b.sent();
+                            return [4 /*yield*/, this.parseTransaction.parsePriceAndStoreToCache(cacheRequestData)];
+                        case 2:
+                            _f.sent();
+                            // const transactionStep1 = await this.parseTransaction.parseTransactionBalancePrice(rawTransactions);
                             // set progress
                             this.parserProgress.next(98);
-                            return [4 /*yield*/, this.tradesBuilderV2.buildTrades(transactionStep1)];
-                        case 2:
-                            transactionStep2 = _b.sent();
+                            return [4 /*yield*/, this.tradesBuilderV2.buildTrades(rawTransactions)];
+                        case 3:
+                            transactionStep2 = _f.sent();
                             transactionStep3 = this.transformTransaction.transformTokenTradeObjectToArr(transactionStep2);
-                            currentDeposit = this.calculateTransaction.getCurrentWalletBalance(transactionStep1[transactionStep1.length - 1]);
-                            startDeposit = this.calculateTransaction.getCurrentWalletBalance(transactionStep1[0]);
-                            lastTransactionBlockNumber = ((_a = transactionStep1[transactionStep1.length - 1]) === null || _a === void 0 ? void 0 : _a.blockNumber) || 0;
+                            _c = (_b = this.calculateTransaction).getCurrentWalletBalance;
+                            return [4 /*yield*/, this.parseTransaction.parseTransactionBalancePriceSingle(rawTransactions[rawTransactions.length - 1])];
+                        case 4:
+                            currentDeposit = _c.apply(_b, [_f.sent()]);
+                            _e = (_d = this.calculateTransaction).getCurrentWalletBalance;
+                            return [4 /*yield*/, this.parseTransaction.parseTransactionBalancePriceSingle(rawTransactions[0])];
+                        case 5:
+                            startDeposit = _e.apply(_d, [_f.sent()]);
+                            lastTransactionBlockNumber = ((_a = rawTransactions[rawTransactions.length - 1]) === null || _a === void 0 ? void 0 : _a.blockNumber) || 0;
                             transactionsCount = rawTransactions.length;
                             tradesCount = this.calculateTransaction.tradesCount(transactionStep3);
                             totalIndicators = this.calculateTransaction.totalProfitLoss(transactionStep3);
                             totalPoints = this.calculateTransaction.totalPoints(transactionStep3);
-                            this.parserProgress.complete();
-                            this.services.uniswapService.requestCounter.complete();
+                            this.completeStreams();
                             return [2 /*return*/, {
                                     points: totalPoints,
                                     currentDeposit: currentDeposit,
@@ -1650,16 +2407,41 @@
                                     lastCheckBlockNumber: lastTransactionBlockNumber,
                                     trades: transactionStep3,
                                 }];
-                        case 3:
-                            e_2 = _b.sent();
-                            this.parserProgress.complete();
-                            this.services.uniswapService.requestCounter.complete();
+                        case 6:
+                            e_2 = _f.sent();
+                            this.completeStreams();
                             console.log('🔥 error: %o', e_2);
                             throw e_2;
-                        case 4: return [2 /*return*/];
+                        case 7: return [2 /*return*/];
                     }
                 });
             });
+        };
+        ParserBase.prototype.noTransactionsResult = function () {
+            return {
+                points: new BigNumber__default['default'](0),
+                currentDeposit: {
+                    amountInETH: new BigNumber__default['default'](0),
+                    amountInUSD: new BigNumber__default['default'](0),
+                },
+                startDeposit: {
+                    amountInETH: new BigNumber__default['default'](0),
+                    amountInUSD: new BigNumber__default['default'](0),
+                },
+                transactionsCount: 0,
+                tradesCount: 0,
+                totalIndicators: {
+                    profitLoss: { fromETH: new BigNumber__default['default'](0), fromUSD: new BigNumber__default['default'](0) },
+                    profit: { fromETH: new BigNumber__default['default'](0), fromUSD: new BigNumber__default['default'](0) },
+                },
+                lastCheckBlockNumber: 0,
+                trades: [],
+            };
+        };
+        ParserBase.prototype.completeStreams = function () {
+            this.parserProgress.complete();
+            this.services.uniswapService.requestCounter.complete();
+            this.estimatedUniswapRequests.complete();
         };
         return ParserBase;
     }());
@@ -1772,25 +2554,41 @@
             return __awaiter(this, void 0, void 0, function () {
                 var _this = this;
                 return __generator(this, function (_a) {
-                    return [2 /*return*/, this.limiter.schedule(function () { return _this.checkTokenArrPriceInUSDandETH(argumentsData); })];
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.uniswapCacheService.isExist(JSON.stringify(argumentsData))];
+                        case 1:
+                            if (_a.sent()) {
+                                return [2 /*return*/, this.uniswapCacheService.getData(JSON.stringify(argumentsData))];
+                            }
+                            return [2 /*return*/, this.limiter.schedule(function () { return _this.checkTokenArrPriceInUSDandETH(argumentsData); })];
+                    }
                 });
             });
         };
-        UniswapServiceBase.prototype.getUniswapTransactionByIdLimiter = function (transactionId, blockNumber) {
-            var _this = this;
-            return this.limiter.schedule(function () {
-                return _this.getUniswapTransactionById(transactionId, blockNumber);
+        UniswapServiceBase.prototype.getUniswapTransactionByIdLimiter = function (argumentsData) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.uniswapCacheService.isExist(JSON.stringify(argumentsData))];
+                        case 1:
+                            if (_a.sent()) {
+                                return [2 /*return*/, this.uniswapCacheService.getData(JSON.stringify(argumentsData))];
+                            }
+                            return [2 /*return*/, this.limiter.schedule(function () { return _this.getUniswapTransactionById(argumentsData); })];
+                    }
+                });
             });
         };
         UniswapServiceBase.prototype.checkTokenArrPriceInUSDandETH = function (argumentsData) {
             return __awaiter(this, void 0, void 0, function () {
-                var PAIR_SEARCH, tokensArrs, totalResult_1, tokensArrs_1, tokensArrs_1_1, tokens, count, maxTries, _loop_1, this_1, state_1, e_1_1, dataResult, e_2;
-                var e_1, _a;
+                var PAIR_SEARCH, tokensArrs, totalResult_1, tokensArrs_1, tokensArrs_1_1, tokens, count, maxTries, _loop_1, this_1, state_1, e_1_1, dataResult, _a, e_2;
+                var e_1, _b;
                 var _this = this;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
+                return __generator(this, function (_c) {
+                    switch (_c.label) {
                         case 0:
-                            _b.trys.push([0, 10, , 11]);
+                            _c.trys.push([0, 14, , 15]);
                             PAIR_SEARCH = graphqlRequest.gql(templateObject_1 || (templateObject_1 = __makeTemplateObject(["\n        query pairs($tokens: [Bytes!], $tokenUSDC: Bytes!, $tokenWETH: Bytes!, $blockNumber: Int!) {\n          usdc0: pairs(\n            where: { token0_in: $tokens, token1: $tokenUSDC, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token1Price\n            token0 {\n              id\n              symbol\n            }\n          }\n          usdc1: pairs(\n            where: { token1_in: $tokens, token0: $tokenUSDC, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token0Price\n            token1 {\n              id\n              symbol\n            }\n          }\n          weth0: pairs(\n            where: { token0_in: $tokens, token1: $tokenWETH, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token1Price\n            token0 {\n              id\n              symbol\n            }\n          }\n          weth1: pairs(\n            where: { token1_in: $tokens, token0: $tokenWETH, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token0Price\n            token1 {\n              id\n              symbol\n            }\n          }\n          ethPrice: bundles(block: { number: $blockNumber }) {\n            ethPrice\n          }\n        }\n      "], ["\n        query pairs($tokens: [Bytes!], $tokenUSDC: Bytes!, $tokenWETH: Bytes!, $blockNumber: Int!) {\n          usdc0: pairs(\n            where: { token0_in: $tokens, token1: $tokenUSDC, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token1Price\n            token0 {\n              id\n              symbol\n            }\n          }\n          usdc1: pairs(\n            where: { token1_in: $tokens, token0: $tokenUSDC, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token0Price\n            token1 {\n              id\n              symbol\n            }\n          }\n          weth0: pairs(\n            where: { token0_in: $tokens, token1: $tokenWETH, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token1Price\n            token0 {\n              id\n              symbol\n            }\n          }\n          weth1: pairs(\n            where: { token1_in: $tokens, token0: $tokenWETH, reserveUSD_gt: 10000 }\n            block: { number: $blockNumber }\n          ) {\n            id\n            token0Price\n            token1 {\n              id\n              symbol\n            }\n          }\n          ethPrice: bundles(block: { number: $blockNumber }) {\n            ethPrice\n          }\n        }\n      "])));
                             tokensArrs = lodash.chunk(argumentsData.tokens.map(function (item) { return item.toLowerCase(); }), 5);
                             totalResult_1 = {
@@ -1800,11 +2598,11 @@
                                 weth1: [],
                                 ethPrice: [],
                             };
-                            _b.label = 1;
+                            _c.label = 1;
                         case 1:
-                            _b.trys.push([1, 7, 8, 9]);
+                            _c.trys.push([1, 7, 8, 9]);
                             tokensArrs_1 = __values(tokensArrs), tokensArrs_1_1 = tokensArrs_1.next();
-                            _b.label = 2;
+                            _c.label = 2;
                         case 2:
                             if (!!tokensArrs_1_1.done) return [3 /*break*/, 6];
                             tokens = tokensArrs_1_1.value;
@@ -1812,9 +2610,9 @@
                             maxTries = 10;
                             _loop_1 = function () {
                                 var localController, localClientGQ, variables, requestTimeLimit, result, e_3;
-                                var _c, _d, _e, _f, _g;
-                                return __generator(this, function (_h) {
-                                    switch (_h.label) {
+                                var _d, _e, _f, _g, _h;
+                                return __generator(this, function (_j) {
+                                    switch (_j.label) {
                                         case 0:
                                             localController = new AbortController();
                                             localClientGQ = new graphqlRequest.GraphQLClient(defaultConfig.uniswap.uniswapGQLEndpointUrl, {
@@ -1830,22 +2628,22 @@
                                             requestTimeLimit = setTimeout(function () {
                                                 localController.abort();
                                             }, 10000);
-                                            _h.label = 1;
+                                            _j.label = 1;
                                         case 1:
-                                            _h.trys.push([1, 3, , 4]);
+                                            _j.trys.push([1, 3, , 4]);
                                             return [4 /*yield*/, localClientGQ.request(PAIR_SEARCH, variables)];
                                         case 2:
-                                            result = _h.sent();
+                                            result = _j.sent();
                                             clearTimeout(requestTimeLimit);
                                             this_1.requestCounter.next(this_1.requestCounter.value + 1);
-                                            (_c = totalResult_1.ethPrice).push.apply(_c, __spreadArray([], __read(result.ethPrice)));
-                                            (_d = totalResult_1.usdc0).push.apply(_d, __spreadArray([], __read(result.usdc0)));
-                                            (_e = totalResult_1.usdc1).push.apply(_e, __spreadArray([], __read(result.usdc1)));
-                                            (_f = totalResult_1.weth0).push.apply(_f, __spreadArray([], __read(result.weth0)));
-                                            (_g = totalResult_1.weth1).push.apply(_g, __spreadArray([], __read(result.weth1)));
+                                            (_d = totalResult_1.ethPrice).push.apply(_d, __spreadArray([], __read(result.ethPrice)));
+                                            (_e = totalResult_1.usdc0).push.apply(_e, __spreadArray([], __read(result.usdc0)));
+                                            (_f = totalResult_1.usdc1).push.apply(_f, __spreadArray([], __read(result.usdc1)));
+                                            (_g = totalResult_1.weth0).push.apply(_g, __spreadArray([], __read(result.weth0)));
+                                            (_h = totalResult_1.weth1).push.apply(_h, __spreadArray([], __read(result.weth1)));
                                             return [2 /*return*/, "break"];
                                         case 3:
-                                            e_3 = _h.sent();
+                                            e_3 = _j.sent();
                                             clearTimeout(requestTimeLimit);
                                             console.log('retry price request');
                                             if (++count === maxTries) {
@@ -1857,11 +2655,11 @@
                                 });
                             };
                             this_1 = this;
-                            _b.label = 3;
+                            _c.label = 3;
                         case 3:
                             return [5 /*yield**/, _loop_1()];
                         case 4:
-                            state_1 = _b.sent();
+                            state_1 = _c.sent();
                             if (state_1 === "break")
                                 return [3 /*break*/, 5];
                             return [3 /*break*/, 3];
@@ -1870,12 +2668,12 @@
                             return [3 /*break*/, 2];
                         case 6: return [3 /*break*/, 9];
                         case 7:
-                            e_1_1 = _b.sent();
+                            e_1_1 = _c.sent();
                             e_1 = { error: e_1_1 };
                             return [3 /*break*/, 9];
                         case 8:
                             try {
-                                if (tokensArrs_1_1 && !tokensArrs_1_1.done && (_a = tokensArrs_1.return)) _a.call(tokensArrs_1);
+                                if (tokensArrs_1_1 && !tokensArrs_1_1.done && (_b = tokensArrs_1.return)) _b.call(tokensArrs_1);
                             }
                             finally { if (e_1) throw e_1.error; }
                             return [7 /*endfinally*/];
@@ -1885,11 +2683,23 @@
                                 accum[value] = _this.tokenPriceSwitcher(token, totalResult_1);
                                 return accum;
                             }, {});
-                            return [2 /*return*/, dataResult];
+                            _a = dataResult;
+                            if (!_a) return [3 /*break*/, 11];
+                            return [4 /*yield*/, this.uniswapCacheService.isExist(JSON.stringify(argumentsData))];
                         case 10:
-                            e_2 = _b.sent();
+                            _a = !(_c.sent());
+                            _c.label = 11;
+                        case 11:
+                            if (!_a) return [3 /*break*/, 13];
+                            return [4 /*yield*/, this.uniswapCacheService.setData(JSON.stringify(argumentsData), dataResult)];
+                        case 12:
+                            _c.sent();
+                            _c.label = 13;
+                        case 13: return [2 /*return*/, dataResult];
+                        case 14:
+                            e_2 = _c.sent();
                             throw e_2;
-                        case 11: return [2 /*return*/];
+                        case 15: return [2 /*return*/];
                     }
                 });
             });
@@ -1975,28 +2785,45 @@
                 });
             });
         };
-        UniswapServiceBase.prototype.getUniswapTransactionById = function (transactionId, blockNumber) {
+        UniswapServiceBase.prototype.getUniswapTransactionById = function (argumentsData) {
             return __awaiter(this, void 0, void 0, function () {
-                var query;
+                var query, dataResult, _a, e_5;
                 var _this = this;
-                return __generator(this, function (_a) {
-                    try {
-                        query = graphqlRequest.gql(templateObject_2 || (templateObject_2 = __makeTemplateObject(["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "], ["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "])), transactionId, blockNumber);
-                        return [2 /*return*/, this.clientGQ.request(query).then(function (res) {
-                                var _a;
-                                _this.requestCounter.next(_this.requestCounter.value + 1);
-                                if (!res.swaps[0]) {
-                                    return undefined;
-                                }
-                                res.swaps[0].amountETH = new BigNumber__default['default'](res.swaps[0].amountUSD).dividedBy((_a = res === null || res === void 0 ? void 0 : res.ethPrice[0]) === null || _a === void 0 ? void 0 : _a.ethPrice).toString();
-                                res.swaps[0].ethPrice = res.ethPrice[0].ethPrice;
-                                return res.swaps[0];
-                            })];
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            _b.trys.push([0, 6, , 7]);
+                            query = graphqlRequest.gql(templateObject_2 || (templateObject_2 = __makeTemplateObject(["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "], ["\n      {\n        swaps(where: { transaction: \"", "\" }) {\n          id\n          transaction {\n            id\n            blockNumber\n            timestamp\n          }\n          timestamp\n          pair {\n            id\n            token0 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            token1 {\n              id\n              symbol\n              name\n              decimals\n              totalSupply\n              tradeVolume\n              tradeVolumeUSD\n              untrackedVolumeUSD\n              txCount\n              totalLiquidity\n              derivedETH\n            }\n            volumeUSD\n            untrackedVolumeUSD\n          }\n          sender\n          amount0In\n          amount1In\n          amount0Out\n          amount1Out\n          to\n          logIndex\n          amountUSD\n        }\n        ethPrice: bundles(block: { number: ", " }) {\n          ethPrice\n        }\n      }\n    "])), argumentsData.transactionId, argumentsData.blockNumber);
+                            return [4 /*yield*/, this.clientGQ.request(query).then(function (res) {
+                                    var _a;
+                                    _this.requestCounter.next(_this.requestCounter.value + 1);
+                                    if (!res.swaps[0]) {
+                                        return undefined;
+                                    }
+                                    res.swaps[0].amountETH = new BigNumber__default['default'](res.swaps[0].amountUSD).dividedBy((_a = res === null || res === void 0 ? void 0 : res.ethPrice[0]) === null || _a === void 0 ? void 0 : _a.ethPrice).toString();
+                                    res.swaps[0].ethPrice = res.ethPrice[0].ethPrice;
+                                    return res.swaps[0];
+                                })];
+                        case 1:
+                            dataResult = _b.sent();
+                            _a = dataResult;
+                            if (!_a) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.uniswapCacheService.isExist(JSON.stringify(argumentsData))];
+                        case 2:
+                            _a = !(_b.sent());
+                            _b.label = 3;
+                        case 3:
+                            if (!_a) return [3 /*break*/, 5];
+                            return [4 /*yield*/, this.uniswapCacheService.setData(JSON.stringify(argumentsData), dataResult)];
+                        case 4:
+                            _b.sent();
+                            _b.label = 5;
+                        case 5: return [2 /*return*/, dataResult];
+                        case 6:
+                            e_5 = _b.sent();
+                            throw e_5;
+                        case 7: return [2 /*return*/];
                     }
-                    catch (e) {
-                        throw e;
-                    }
-                    return [2 /*return*/];
                 });
             });
         };
@@ -2071,45 +2898,6 @@
             _this.uniswapCacheService = new UniswapCacheService(_this.config);
             return _this;
         }
-        UniswapServiceApi.prototype.checkTokenArrPriceInUSDandETHLimiter = function (argumentsData) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.uniswapCacheService.isExist(JSON.stringify(argumentsData))];
-                        case 1:
-                            if (_a.sent()) {
-                                return [2 /*return*/, this.uniswapCacheService.getData(JSON.stringify(argumentsData))];
-                            }
-                            return [2 /*return*/, _super.prototype.checkTokenArrPriceInUSDandETHLimiter.call(this, argumentsData)];
-                    }
-                });
-            });
-        };
-        UniswapServiceApi.prototype.checkTokenArrPriceInUSDandETH = function (argumentsData) {
-            return __awaiter(this, void 0, void 0, function () {
-                var dataResult, _a;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4 /*yield*/, _super.prototype.checkTokenArrPriceInUSDandETH.call(this, argumentsData)];
-                        case 1:
-                            dataResult = _b.sent();
-                            _a = dataResult;
-                            if (!_a) return [3 /*break*/, 3];
-                            return [4 /*yield*/, this.uniswapCacheService.isExist(JSON.stringify(argumentsData))];
-                        case 2:
-                            _a = !(_b.sent());
-                            _b.label = 3;
-                        case 3:
-                            if (!_a) return [3 /*break*/, 5];
-                            return [4 /*yield*/, this.uniswapCacheService.setData(JSON.stringify(argumentsData), dataResult)];
-                        case 4:
-                            _b.sent();
-                            _b.label = 5;
-                        case 5: return [2 /*return*/, dataResult];
-                    }
-                });
-            });
-        };
         return UniswapServiceApi;
     }(UniswapServiceBase));
 

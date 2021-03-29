@@ -51,16 +51,15 @@ var TradesBuilderV2 = /** @class */ (function () {
             return tslib_1.__generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        _a.trys.push([0, 3, , 4]);
+                        _a.trys.push([0, 2, , 3]);
                         return [4 /*yield*/, this.services.web3Service.getCurrentBlockNumberLimiter()];
                     case 1:
                         currentBlockNumber = _a.sent();
-                        return [4 /*yield*/, this.parseTransactionWallet.parseTransactionBalancePrice(this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber), true)];
-                    case 2: return [2 /*return*/, _a.sent()];
-                    case 3:
+                        return [2 /*return*/, this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber)];
+                    case 2:
                         e_1 = _a.sent();
                         throw e_1;
-                    case 4: return [2 /*return*/];
+                    case 3: return [2 /*return*/];
                 }
             });
         });
@@ -113,7 +112,7 @@ var TradesBuilderV2 = /** @class */ (function () {
             return tslib_1.__generator(this, function (_a) {
                 // console.log('behaviourIterator', data.length);
                 return [2 /*return*/, data.reduce(function (accumulatorValuePromise, currentItem, index) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                        var accumulatorValue, state, _a, _b, operation, _c, _d, operation;
+                        var accumulatorValue, stateBase, _a, _b, operation, e_2_1, _c, _d, operation, e_3_1;
                         var e_2, _e, e_3, _f;
                         return tslib_1.__generator(this, function (_g) {
                             switch (_g.label) {
@@ -126,78 +125,129 @@ var TradesBuilderV2 = /** @class */ (function () {
                                     }
                                     return [4 /*yield*/, this.getTokenOperationState(currentItem)];
                                 case 2:
-                                    state = _g.sent();
-                                    if (state.isTrustedProvider) {
-                                        try {
-                                            // Uniswap transaction
-                                            for (_a = tslib_1.__values(state.operations), _b = _a.next(); !_b.done; _b = _a.next()) {
-                                                operation = _b.value;
-                                                if (operation.amount.isGreaterThan(0)) {
-                                                    // Income event (Open trade or Rebuy open position)
-                                                    this.calculateIncomeEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
-                                                }
-                                                else {
-                                                    this.calculateOutgoingEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
-                                                }
-                                            }
-                                        }
-                                        catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                                        finally {
-                                            try {
-                                                if (_b && !_b.done && (_e = _a.return)) _e.call(_a);
-                                            }
-                                            finally { if (e_2) throw e_2.error; }
-                                        }
+                                    stateBase = _g.sent();
+                                    if (!stateBase.isTrustedProvider) return [3 /*break*/, 13];
+                                    _g.label = 3;
+                                case 3:
+                                    _g.trys.push([3, 10, 11, 12]);
+                                    _a = tslib_1.__values(stateBase.operations), _b = _a.next();
+                                    _g.label = 4;
+                                case 4:
+                                    if (!!_b.done) return [3 /*break*/, 9];
+                                    operation = _b.value;
+                                    if (!operation.amount.isGreaterThan(0)) return [3 /*break*/, 6];
+                                    // Income event (Open trade or Rebuy open position)
+                                    return [4 /*yield*/, this.calculateIncomeEvent(accumulatorValue, operation, stateBase, currentItem)];
+                                case 5:
+                                    // Income event (Open trade or Rebuy open position)
+                                    _g.sent();
+                                    return [3 /*break*/, 8];
+                                case 6: return [4 /*yield*/, this.calculateOutgoingEvent(accumulatorValue, operation, stateBase, currentItem)];
+                                case 7:
+                                    _g.sent();
+                                    _g.label = 8;
+                                case 8:
+                                    _b = _a.next();
+                                    return [3 /*break*/, 4];
+                                case 9: return [3 /*break*/, 12];
+                                case 10:
+                                    e_2_1 = _g.sent();
+                                    e_2 = { error: e_2_1 };
+                                    return [3 /*break*/, 12];
+                                case 11:
+                                    try {
+                                        if (_b && !_b.done && (_e = _a.return)) _e.call(_a);
                                     }
-                                    else {
-                                        try {
-                                            // Other transaction
-                                            for (_c = tslib_1.__values(state.operations), _d = _c.next(); !_d.done; _d = _c.next()) {
-                                                operation = _d.value;
-                                                if (operation.amount.isLessThanOrEqualTo(0)) {
-                                                    // Income event (Open trade or Rebuy open position)
-                                                    this.calculateOutgoingEvent(accumulatorValue, operation, state, currentItem.balanceBeforeTransaction);
-                                                }
-                                            }
-                                        }
-                                        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-                                        finally {
-                                            try {
-                                                if (_d && !_d.done && (_f = _c.return)) _f.call(_c);
-                                            }
-                                            finally { if (e_3) throw e_3.error; }
-                                        }
+                                    finally { if (e_2) throw e_2.error; }
+                                    return [7 /*endfinally*/];
+                                case 12: return [3 /*break*/, 20];
+                                case 13:
+                                    _g.trys.push([13, 18, 19, 20]);
+                                    _c = tslib_1.__values(stateBase.operations), _d = _c.next();
+                                    _g.label = 14;
+                                case 14:
+                                    if (!!_d.done) return [3 /*break*/, 17];
+                                    operation = _d.value;
+                                    if (!operation.amount.isLessThanOrEqualTo(0)) return [3 /*break*/, 16];
+                                    // Income event (Open trade or Rebuy open position)
+                                    return [4 /*yield*/, this.calculateOutgoingEvent(accumulatorValue, operation, stateBase, currentItem)];
+                                case 15:
+                                    // Income event (Open trade or Rebuy open position)
+                                    _g.sent();
+                                    _g.label = 16;
+                                case 16:
+                                    _d = _c.next();
+                                    return [3 /*break*/, 14];
+                                case 17: return [3 /*break*/, 20];
+                                case 18:
+                                    e_3_1 = _g.sent();
+                                    e_3 = { error: e_3_1 };
+                                    return [3 /*break*/, 20];
+                                case 19:
+                                    try {
+                                        if (_d && !_d.done && (_f = _c.return)) _f.call(_c);
                                     }
-                                    return [2 /*return*/, accumulatorValue];
+                                    finally { if (e_3) throw e_3.error; }
+                                    return [7 /*endfinally*/];
+                                case 20: return [2 /*return*/, accumulatorValue];
                             }
                         });
                     }); }, Promise.resolve(initValue))];
             });
         });
     };
-    TradesBuilderV2.prototype.calculateOutgoingEvent = function (accumulatorValue, operation, state, balanceBeforeTransaction) {
+    TradesBuilderV2.prototype.calculateOutgoingEvent = function (accumulatorValue, operation, stateBase, currentItem) {
         var _a;
-        var openTradeIndex = (((_a = accumulatorValue[operation.address]) === null || _a === void 0 ? void 0 : _a.trades) || []).findIndex(function (x) { return x.tradeStatus === tradesBuilderV2_interface_1.TradeStatus.OPEN; });
-        if (openTradeIndex >= 0) {
-            this.calculateOperationWithOpenTrade(operation, state, accumulatorValue[operation.address], openTradeIndex, balanceBeforeTransaction);
-        }
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var openTradeIndex, currentItemParsed, stateParsed;
+            return tslib_1.__generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        openTradeIndex = (((_a = accumulatorValue[operation.address]) === null || _a === void 0 ? void 0 : _a.trades) || []).findIndex(function (x) { return x.tradeStatus === tradesBuilderV2_interface_1.TradeStatus.OPEN; });
+                        if (!(openTradeIndex >= 0)) return [3 /*break*/, 3];
+                        return [4 /*yield*/, this.parseTransactionWallet.parseTransactionBalancePriceSingle(currentItem, true)];
+                    case 1:
+                        currentItemParsed = _b.sent();
+                        return [4 /*yield*/, this.getTokenOperationPrice(stateBase, currentItemParsed)];
+                    case 2:
+                        stateParsed = _b.sent();
+                        this.calculateOperationWithOpenTrade(operation, stateParsed, accumulatorValue[operation.address], openTradeIndex, currentItemParsed.balanceBeforeTransaction);
+                        _b.label = 3;
+                    case 3: return [2 /*return*/];
+                }
+            });
+        });
     };
-    TradesBuilderV2.prototype.calculateIncomeEvent = function (accumulatorValue, operation, state, balanceBeforeTransaction) {
-        if (accumulatorValue[operation.address]) {
-            var openTradeIndex = accumulatorValue[operation.address].trades.findIndex(function (x) { return x.tradeStatus === tradesBuilderV2_interface_1.TradeStatus.OPEN; });
-            if (openTradeIndex >= 0) {
-                this.calculateOperationWithOpenTrade(operation, state, accumulatorValue[operation.address], openTradeIndex, balanceBeforeTransaction);
-            }
-            else {
-                accumulatorValue[operation.address].trades.push(this.openNewTrade(state, operation, balanceBeforeTransaction));
-            }
-        }
-        else {
-            accumulatorValue[operation.address] = {
-                tokenAddress: operation.address,
-                trades: [this.openNewTrade(state, operation, balanceBeforeTransaction)],
-            };
-        }
+    TradesBuilderV2.prototype.calculateIncomeEvent = function (accumulatorValue, operation, stateBase, currentItem) {
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var currentItemParsed, stateParsed, openTradeIndex;
+            return tslib_1.__generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.parseTransactionWallet.parseTransactionBalancePriceSingle(currentItem, true)];
+                    case 1:
+                        currentItemParsed = _a.sent();
+                        return [4 /*yield*/, this.getTokenOperationPrice(stateBase, currentItemParsed)];
+                    case 2:
+                        stateParsed = _a.sent();
+                        if (accumulatorValue[operation.address]) {
+                            openTradeIndex = accumulatorValue[operation.address].trades.findIndex(function (x) { return x.tradeStatus === tradesBuilderV2_interface_1.TradeStatus.OPEN; });
+                            if (openTradeIndex >= 0) {
+                                this.calculateOperationWithOpenTrade(operation, stateParsed, accumulatorValue[operation.address], openTradeIndex, currentItemParsed.balanceBeforeTransaction);
+                            }
+                            else {
+                                accumulatorValue[operation.address].trades.push(this.openNewTrade(stateParsed, operation, currentItemParsed.balanceBeforeTransaction));
+                            }
+                        }
+                        else {
+                            accumulatorValue[operation.address] = {
+                                tokenAddress: operation.address,
+                                trades: [this.openNewTrade(stateParsed, operation, currentItemParsed.balanceBeforeTransaction)],
+                            };
+                        }
+                        return [2 /*return*/];
+                }
+            });
+        });
     };
     TradesBuilderV2.prototype.calculateOperationWithOpenTrade = function (operation, state, data, openTradeIndex, balanceBeforeTransaction) {
         var tradeEvent = this.createNewTradeEvent(state, operation, balanceBeforeTransaction, data.trades[openTradeIndex]);
@@ -464,7 +514,7 @@ var TradesBuilderV2 = /** @class */ (function () {
     TradesBuilderV2.prototype.getTokenOperationState = function (currentData) {
         var _a, _b;
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var state, balancesDifferencesData, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_5;
+            var state, balancesDifferencesData, normalTransaction, uniswapTransactionData, e_5;
             return tslib_1.__generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -474,87 +524,43 @@ var TradesBuilderV2 = /** @class */ (function () {
                         if (!(currentData.normalTransactions &&
                             ((_b = (_a = currentData.normalTransactions[0]) === null || _a === void 0 ? void 0 : _a.to) === null || _b === void 0 ? void 0 : _b.toLowerCase()) === defaultConfig_1.default.uniswap.uniswapRouterAddress)) return [3 /*break*/, 2];
                         normalTransaction = currentData.normalTransactions[0];
-                        return [4 /*yield*/, this.services.uniswapService.getUniswapTransactionByIdLimiter(normalTransaction.hash, +normalTransaction.blockNumber)];
+                        return [4 /*yield*/, this.services.uniswapService.getUniswapTransactionByIdLimiter({
+                                transactionId: normalTransaction.hash,
+                                blockNumber: +normalTransaction.blockNumber,
+                            })];
                     case 1:
                         uniswapTransactionData = _c.sent();
                         // Catch Only correct Uniswap Swaps (for trades) Exclude add or remove from liquidity
                         if (uniswapTransactionData) {
-                            operationPriceUniRaw = this.operationPriceFromUniswap(uniswapTransactionData);
-                            transactionFeeETH = currentData.feeInETH;
-                            transactionFeeUSD = currentData.feeInETH.multipliedBy(uniswapTransactionData.ethPrice);
-                            operationPriceIncludeFee = this.operationPriceWithFee(operationPriceUniRaw, transactionFeeETH, transactionFeeUSD);
                             state = {
                                 isVirtualTransaction: currentData.isVirtualTransaction,
                                 operations: balancesDifferencesData.differences,
                                 operationInfo: balancesDifferencesData.operationInfo,
-                                amount: {
-                                    raw: {
-                                        ETH: operationPriceUniRaw.amountInETH,
-                                        USD: operationPriceUniRaw.amountInUSD,
-                                    },
-                                    withFee: {
-                                        ETH: operationPriceIncludeFee.amountInETH,
-                                        USD: operationPriceIncludeFee.amountInUSD,
-                                    },
-                                },
                                 isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.first,
                                 timeStamp: normalTransaction.timeStamp,
                                 transactionHash: normalTransaction.hash,
-                                transactionFeeETH: transactionFeeETH,
-                                transactionFeeUSD: transactionFeeUSD,
                             };
                         }
                         else {
-                            operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferencesData.differences, currentData.balance);
-                            transactionFeeETH = currentData.feeInETH;
-                            transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
-                            operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
+                            // Catch add or remove from liquidity Uniswap
                             state = {
                                 isVirtualTransaction: currentData.isVirtualTransaction,
                                 operations: balancesDifferencesData.differences,
                                 operationInfo: balancesDifferencesData.operationInfo,
-                                amount: {
-                                    raw: {
-                                        ETH: operationPriceOtherRaw.amountInETH,
-                                        USD: operationPriceOtherRaw.amountInUSD,
-                                    },
-                                    withFee: {
-                                        ETH: operationPriceIncludeFee.amountInETH,
-                                        USD: operationPriceIncludeFee.amountInUSD,
-                                    },
-                                },
                                 isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.second,
                                 timeStamp: normalTransaction.timeStamp,
                                 transactionHash: normalTransaction.hash,
-                                transactionFeeETH: transactionFeeETH,
-                                transactionFeeUSD: transactionFeeUSD,
                             };
                         }
                         return [3 /*break*/, 3];
                     case 2:
-                        operationPriceOtherRaw = this.operationPriceFromOtherSource(balancesDifferencesData.differences, currentData.balance);
-                        transactionFeeETH = currentData.feeInETH;
-                        transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
-                        operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
                         state = {
                             isVirtualTransaction: currentData.isVirtualTransaction,
                             operations: balancesDifferencesData.differences,
                             operationInfo: balancesDifferencesData.operationInfo,
-                            amount: {
-                                raw: {
-                                    ETH: operationPriceOtherRaw.amountInETH,
-                                    USD: operationPriceOtherRaw.amountInUSD,
-                                },
-                                withFee: {
-                                    ETH: operationPriceIncludeFee.amountInETH,
-                                    USD: operationPriceIncludeFee.amountInUSD,
-                                },
-                            },
                             isTrustedProvider: this.behaviourConfig.isTrustedProviderPattern.third,
                             timeStamp: currentData.timeStamp,
                             transactionHash: currentData.hash,
-                            transactionFeeETH: transactionFeeETH,
-                            transactionFeeUSD: transactionFeeUSD,
                         };
                         _c.label = 3;
                     case 3: return [2 /*return*/, state];
@@ -566,11 +572,91 @@ var TradesBuilderV2 = /** @class */ (function () {
             });
         });
     };
+    TradesBuilderV2.prototype.getTokenOperationPrice = function (stateBase, currentData) {
+        var _a, _b;
+        return tslib_1.__awaiter(this, void 0, void 0, function () {
+            var stateWithPrices, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_6;
+            return tslib_1.__generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        _c.trys.push([0, 4, , 5]);
+                        stateWithPrices = void 0;
+                        if (!(currentData.normalTransactions &&
+                            ((_b = (_a = currentData.normalTransactions[0]) === null || _a === void 0 ? void 0 : _a.to) === null || _b === void 0 ? void 0 : _b.toLowerCase()) === defaultConfig_1.default.uniswap.uniswapRouterAddress)) return [3 /*break*/, 2];
+                        normalTransaction = currentData.normalTransactions[0];
+                        return [4 /*yield*/, this.services.uniswapService.getUniswapTransactionByIdLimiter({
+                                transactionId: normalTransaction.hash,
+                                blockNumber: +normalTransaction.blockNumber,
+                            })];
+                    case 1:
+                        uniswapTransactionData = _c.sent();
+                        // Catch Only correct Uniswap Swaps (for trades) Exclude add or remove from liquidity
+                        if (uniswapTransactionData) {
+                            operationPriceUniRaw = this.operationPriceFromUniswap(uniswapTransactionData);
+                            transactionFeeETH = currentData.feeInETH;
+                            transactionFeeUSD = currentData.feeInETH.multipliedBy(uniswapTransactionData.ethPrice);
+                            operationPriceIncludeFee = this.operationPriceWithFee(operationPriceUniRaw, transactionFeeETH, transactionFeeUSD);
+                            stateWithPrices = tslib_1.__assign(tslib_1.__assign({}, stateBase), { amount: {
+                                    raw: {
+                                        ETH: operationPriceUniRaw.amountInETH,
+                                        USD: operationPriceUniRaw.amountInUSD,
+                                    },
+                                    withFee: {
+                                        ETH: operationPriceIncludeFee.amountInETH,
+                                        USD: operationPriceIncludeFee.amountInUSD,
+                                    },
+                                }, transactionFeeETH: transactionFeeETH,
+                                transactionFeeUSD: transactionFeeUSD });
+                        }
+                        else {
+                            operationPriceOtherRaw = this.operationPriceFromOtherSource(stateBase.operations, currentData.balance);
+                            transactionFeeETH = currentData.feeInETH;
+                            transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
+                            operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
+                            stateWithPrices = tslib_1.__assign(tslib_1.__assign({}, stateBase), { amount: {
+                                    raw: {
+                                        ETH: operationPriceOtherRaw.amountInETH,
+                                        USD: operationPriceOtherRaw.amountInUSD,
+                                    },
+                                    withFee: {
+                                        ETH: operationPriceIncludeFee.amountInETH,
+                                        USD: operationPriceIncludeFee.amountInUSD,
+                                    },
+                                }, transactionFeeETH: transactionFeeETH,
+                                transactionFeeUSD: transactionFeeUSD });
+                        }
+                        return [3 /*break*/, 3];
+                    case 2:
+                        operationPriceOtherRaw = this.operationPriceFromOtherSource(stateBase.operations, currentData.balance);
+                        transactionFeeETH = currentData.feeInETH;
+                        transactionFeeUSD = currentData.feeInETH.multipliedBy(operationPriceOtherRaw.usdPer1ETH);
+                        operationPriceIncludeFee = this.operationPriceWithFee(operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD);
+                        stateWithPrices = tslib_1.__assign(tslib_1.__assign({}, stateBase), { amount: {
+                                raw: {
+                                    ETH: operationPriceOtherRaw.amountInETH,
+                                    USD: operationPriceOtherRaw.amountInUSD,
+                                },
+                                withFee: {
+                                    ETH: operationPriceIncludeFee.amountInETH,
+                                    USD: operationPriceIncludeFee.amountInUSD,
+                                },
+                            }, transactionFeeETH: transactionFeeETH,
+                            transactionFeeUSD: transactionFeeUSD });
+                        _c.label = 3;
+                    case 3: return [2 /*return*/, stateWithPrices];
+                    case 4:
+                        e_6 = _c.sent();
+                        throw e_6;
+                    case 5: return [2 /*return*/];
+                }
+            });
+        });
+    };
     TradesBuilderV2.prototype.operationPriceWithFee = function (operationPrice, feeETH, feeUSD) {
         return tslib_1.__assign(tslib_1.__assign({}, operationPrice), { amountInUSD: operationPrice.amountInUSD.plus(feeUSD), amountInETH: operationPrice.amountInETH.plus(feeETH) });
     };
     TradesBuilderV2.prototype.balanceDifferences = function (currentBalance, beforeBalance, parsedFeeInETH) {
-        var e_6, _a;
+        var e_7, _a;
         var _b, _c, _d, _e;
         var tokensAddress = lodash_1.default.uniq(tslib_1.__spreadArray(tslib_1.__spreadArray([], tslib_1.__read(Object.keys(currentBalance))), tslib_1.__read(Object.keys(beforeBalance))));
         var diffs = [];
@@ -612,12 +698,12 @@ var TradesBuilderV2 = /** @class */ (function () {
                 }
             }
         }
-        catch (e_6_1) { e_6 = { error: e_6_1 }; }
+        catch (e_7_1) { e_7 = { error: e_7_1 }; }
         finally {
             try {
                 if (tokensAddress_1_1 && !tokensAddress_1_1.done && (_a = tokensAddress_1.return)) _a.call(tokensAddress_1);
             }
-            finally { if (e_6) throw e_6.error; }
+            finally { if (e_7) throw e_7.error; }
         }
         return {
             differences: diffs.filter(function (x) { return !stableCoins_1.stableCoinList.some(function (y) { return y.address === x.address.toLowerCase(); }); }),
