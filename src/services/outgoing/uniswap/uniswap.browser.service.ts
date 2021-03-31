@@ -14,7 +14,7 @@ export class UniswapServiceClient extends UniswapServiceBase {
     super();
 
     this.limiter = new Bottleneck({
-      minTime: 200,
+      minTime: 100,
       maxConcurrent: 5,
     });
 

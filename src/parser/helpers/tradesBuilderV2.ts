@@ -86,7 +86,7 @@ export class TradesBuilderV2 {
         erc721Transactions: [],
         balanceBeforeTransaction: balanceBeforeTransaction,
         balance: this.generateBalanceDiffForVirtualTradePnl(value, balanceBeforeTransaction),
-        blockNumber: currentBlockNumber - 10,
+        blockNumber: currentBlockNumber - 50,
         previousTransactionBlockNumber: lastGroupedTransaction.blockNumber,
         feeInETH: new BigNumber(0),
         isVirtualTransaction: true,
