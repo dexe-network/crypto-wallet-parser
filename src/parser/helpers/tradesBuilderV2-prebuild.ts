@@ -14,7 +14,11 @@ import {
 import { parsedBalanceToRaw } from '../../helpers/tokens.helper';
 import { stableCoinList } from '../../constants/stableCoins';
 import { IParserClientConfig, IServices } from '../../interfaces';
-import { generateBehaviourConfig, ITradesBuilderV2BehaviourConfig } from '../configs/tradesBuilderV2.configs';
+import {
+  generateBehaviourConfig,
+  ITradesBuilderV2BehaviourConfig,
+  virtualTradeBlockNumberOffset,
+} from '../configs/tradesBuilderV2.configs';
 import { ethDefaultInfo } from '../../constants/tokenInfo';
 import {
   IPrebuildOperationItemBase,
@@ -31,7 +35,10 @@ export class TradesBuilderV2Prebuild {
     this.behaviourConfig = generateBehaviourConfig(config);
   }
 
-  public async buildTrades(data: IGroupedTransactions<ITokenBalanceItemBase>[]): Promise<IPrebuildTradeIterateObject> {
+  public async buildTrades(
+    data: IGroupedTransactions<ITokenBalanceItemBase>[],
+    currentBlockNumber: number,
+  ): Promise<IPrebuildTradeIterateObject> {
     const rawResult = await this.behaviourIterator(data);
 
     const openTrades = Object.values(rawResult)
@@ -40,7 +47,7 @@ export class TradesBuilderV2Prebuild {
 
     let withVirtualTrades;
     if (openTrades.length > 0) {
-      const virtualTrade = await this.generateVirtualTrades(openTrades, data[data.length - 1]);
+      const virtualTrade = await this.generateVirtualTrades(openTrades, data[data.length - 1], currentBlockNumber);
       withVirtualTrades = await this.behaviourIterator(virtualTrade, rawResult);
     }
 
@@ -50,9 +57,9 @@ export class TradesBuilderV2Prebuild {
   private async generateVirtualTrades(
     openTrades: IPrebuildTradeItem[],
     lastGroupedTransaction: IGroupedTransactions<ITokenBalanceItemBase>,
+    currentBlockNumber: number,
   ): Promise<IGroupedTransactions<ITokenBalanceItemBase>[]> {
     try {
-      const currentBlockNumber = await this.services.web3Service.getCurrentBlockNumberLimiter();
       return this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber);
     } catch (e) {
       throw e;
@@ -73,7 +80,7 @@ export class TradesBuilderV2Prebuild {
         erc721Transactions: [],
         balanceBeforeTransaction: balanceBeforeTransaction,
         balance: this.generateBalanceDiffForVirtualTradePnl(value, balanceBeforeTransaction),
-        blockNumber: currentBlockNumber - 10,
+        blockNumber: currentBlockNumber - virtualTradeBlockNumberOffset,
         previousTransactionBlockNumber: lastGroupedTransaction.blockNumber,
         feeInETH: new BigNumber(0),
         isVirtualTransaction: true,

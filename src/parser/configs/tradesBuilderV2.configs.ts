@@ -31,3 +31,5 @@ export const generateBehaviourConfig = (config: IParserClientConfig): ITradesBui
     isTrustedProviderPattern: generateIsTrustedProviderPattern(config),
   };
 };
+
+export const virtualTradeBlockNumberOffset = 50;

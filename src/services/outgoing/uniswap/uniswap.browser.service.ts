@@ -8,7 +8,7 @@ import { UniswapPrebuildCacheService } from '../../helpers/uniswapPrebuildCache.
 export class UniswapServiceClient extends UniswapServiceBase {
   protected limiter: Bottleneck;
   protected clientGQ: GraphQLClient;
-  protected uniswapCacheService: UniswapPrebuildCacheService;
+  public uniswapCacheService: UniswapPrebuildCacheService;
 
   constructor(protected config: IParserClientConfig) {
     super();
@@ -20,5 +20,9 @@ export class UniswapServiceClient extends UniswapServiceBase {
 
     this.clientGQ = new GraphQLClient(defaultConfig.uniswap.uniswapGQLEndpointUrl);
     this.uniswapCacheService = new UniswapPrebuildCacheService();
+
+    if (this.config.cache) {
+      this.uniswapCacheService.cache = new Map(Object.entries(this.config.cache));
+    }
   }
 }

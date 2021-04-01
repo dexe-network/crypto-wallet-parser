@@ -4,7 +4,7 @@ import { ParserBase } from './parsers';
 import { UniswapServiceApi } from '../services/outgoing/uniswap/uniswap.main.service';
 import { EtherscanServiceApi } from '../services/outgoing/etherscan/etherscan.service.main';
 
-export class ParserApi extends ParserBase<IParserApiConfig> {
+export class ParserApi extends ParserBase<IParserApiConfig, IServicesApi> {
   constructor(public config: IParserApiConfig) {
     super(
       {

@@ -16,7 +16,9 @@ export interface IParserClientConfig {
     infuraProjectId: string;
     etherscanApiKey: string;
   };
+  cache?: { [key: string]: any };
 }
+
 export interface IParserApiConfig {
   parserMode: PARSER_MODE;
   correctWallet: string;

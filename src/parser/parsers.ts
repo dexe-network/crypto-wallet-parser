@@ -19,7 +19,7 @@ import { auditTime } from 'rxjs/operators';
 import { TradesBuilderV2Prebuild } from './helpers/tradesBuilderV2-prebuild';
 import BigNumber from 'bignumber.js';
 
-export abstract class ParserBase<ConfigType> {
+export abstract class ParserBase<ConfigType, ServicesType extends IServices> {
   public rawTransactions: IGroupedTransactions<ITokenBalanceItemBase>[] = [];
 
   public parserProgress = new BehaviorSubject(0);
@@ -35,7 +35,7 @@ export abstract class ParserBase<ConfigType> {
   protected calculateBalance = new CalculateBalance();
   protected calculateTransaction = new CalculateTransaction();
 
-  constructor(protected services: IServices, protected config: IParserClientConfig) {}
+  constructor(public services: ServicesType, protected config: IParserClientConfig) {}
 
   public async init(): Promise<void> {
     try {
@@ -59,7 +59,8 @@ export abstract class ParserBase<ConfigType> {
         return this.noTransactionsResult();
       }
 
-      const preBuildTrades = await this.tradesBuilderV2Prebuild.buildTrades(rawTransactions);
+      const currentBlockNumber = await this.services.web3Service.getCurrentBlockNumberLimiter();
+      const preBuildTrades = await this.tradesBuilderV2Prebuild.buildTrades(rawTransactions, currentBlockNumber);
       const cacheRequestData = this.transformTransaction.buildCacheRequestData(preBuildTrades, rawTransactions);
       this.estimatedUniswapRequests.next(cacheRequestData.requestsCount);
 
@@ -70,7 +71,7 @@ export abstract class ParserBase<ConfigType> {
 
       // set progress
       this.parserProgress.next(98);
-      const transactionStep2 = await this.tradesBuilderV2.buildTrades(rawTransactions);
+      const transactionStep2 = await this.tradesBuilderV2.buildTrades(rawTransactions, currentBlockNumber);
       const transactionStep3 = this.transformTransaction.transformTokenTradeObjectToArr(transactionStep2);
 
       // Calculate Statistic Data

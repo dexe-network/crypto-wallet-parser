@@ -1,7 +1,7 @@
 import shortHash from 'shorthash2';
 
 export class UniswapPrebuildCacheService {
-  private cache = new Map();
+  public cache = new Map();
 
   public async getData<T>(keyValue: string): Promise<T> {
     const key = shortHash(keyValue);
