@@ -36,8 +36,8 @@ export abstract class UniswapServiceBase {
   public async checkTokenArrPriceInUSDandETHLimiter(
     argumentsData: ICheckTokenArrPriceInUSDandETHArguments,
   ): Promise<IArrTokenPriceCheckResult> {
-    if (await this.uniswapCacheService.isExist(JSON.stringify(argumentsData))) {
-      return this.uniswapCacheService.getData<IArrTokenPriceCheckResult>(JSON.stringify(argumentsData));
+    if (await this.uniswapCacheService.isExist(argumentsData)) {
+      return this.uniswapCacheService.getData<IArrTokenPriceCheckResult>(argumentsData);
     }
 
     return this.limiter.schedule<IArrTokenPriceCheckResult>(() => this.checkTokenArrPriceInUSDandETH(argumentsData));
@@ -46,8 +46,8 @@ export abstract class UniswapServiceBase {
   public async getUniswapTransactionByIdLimiter(
     argumentsData: IGetUniswapTransactionByIdArguments,
   ): Promise<IUniswapRawTransaction> {
-    if (await this.uniswapCacheService.isExist(JSON.stringify(argumentsData))) {
-      return this.uniswapCacheService.getData<IUniswapRawTransaction>(JSON.stringify(argumentsData));
+    if (await this.uniswapCacheService.isExist(argumentsData)) {
+      return this.uniswapCacheService.getData<IUniswapRawTransaction>(argumentsData);
     }
 
     return this.limiter.schedule<IUniswapRawTransaction>(() => this.getUniswapTransactionById(argumentsData));
@@ -169,8 +169,8 @@ export abstract class UniswapServiceBase {
       }, {} as IArrTokenPriceCheckResult);
 
       // Write data to cache
-      if (dataResult && !(await this.uniswapCacheService.isExist(JSON.stringify(argumentsData)))) {
-        await this.uniswapCacheService.setData<IArrTokenPriceCheckResult>(JSON.stringify(argumentsData), dataResult);
+      if (dataResult && !(await this.uniswapCacheService.isExist(argumentsData))) {
+        await this.uniswapCacheService.setData<IArrTokenPriceCheckResult>(argumentsData, dataResult);
       }
 
       return dataResult;
@@ -333,8 +333,8 @@ export abstract class UniswapServiceBase {
       });
 
       // Write data to cache
-      if (dataResult && !(await this.uniswapCacheService.isExist(JSON.stringify(argumentsData)))) {
-        await this.uniswapCacheService.setData<IUniswapRawTransaction>(JSON.stringify(argumentsData), dataResult);
+      if (dataResult && !(await this.uniswapCacheService.isExist(argumentsData))) {
+        await this.uniswapCacheService.setData<IUniswapRawTransaction>(argumentsData, dataResult);
       }
 
       return dataResult;

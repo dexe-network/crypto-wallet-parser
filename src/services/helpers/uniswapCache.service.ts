@@ -1,6 +1,10 @@
 import IORedis from 'ioredis';
 import shortHash from 'shorthash2';
-import { IParserApiConfig } from '../../interfaces';
+import {
+  ICheckTokenArrPriceInUSDandETHArguments,
+  IGetUniswapTransactionByIdArguments,
+  IParserApiConfig,
+} from '../../interfaces';
 
 export class UniswapCacheService {
   private redis: IORedis.Redis;
@@ -9,8 +13,11 @@ export class UniswapCacheService {
     this.redis = new IORedis(config.env.uniswapCacheRedisURL);
   }
 
-  public async getData<T>(keyValue: string): Promise<T> {
-    const key = shortHash(keyValue);
+  public async getData<T>(
+    keyData: ICheckTokenArrPriceInUSDandETHArguments | IGetUniswapTransactionByIdArguments,
+  ): Promise<T> {
+    const stringifyKeyData = JSON.stringify(keyData);
+    const key = shortHash(stringifyKeyData);
     try {
       if (await this.redis.exists(key)) {
         return this.getObjectFromRedis<T>(key);
@@ -22,13 +29,20 @@ export class UniswapCacheService {
     }
   }
 
-  public async setData<T>(keyValue: string, data: T): Promise<void> {
-    const key = shortHash(keyValue);
+  public async setData<T>(
+    keyData: ICheckTokenArrPriceInUSDandETHArguments | IGetUniswapTransactionByIdArguments,
+    data: T,
+  ): Promise<void> {
+    const stringifyKeyData = JSON.stringify(keyData);
+    const key = shortHash(stringifyKeyData);
     await this.setObjectToRedis<T>(key, data);
   }
 
-  public async isExist(keyValue: string): Promise<boolean> {
-    const key = shortHash(keyValue);
+  public async isExist(
+    keyData: ICheckTokenArrPriceInUSDandETHArguments | IGetUniswapTransactionByIdArguments,
+  ): Promise<boolean> {
+    const stringifyKeyData = JSON.stringify(keyData);
+    const key = shortHash(stringifyKeyData);
     return !!(await this.redis.exists(key));
   }
 

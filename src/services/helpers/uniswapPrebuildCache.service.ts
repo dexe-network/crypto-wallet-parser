@@ -1,10 +1,14 @@
 import shortHash from 'shorthash2';
+import { ICheckTokenArrPriceInUSDandETHArguments, IGetUniswapTransactionByIdArguments } from '../../interfaces';
 
 export class UniswapPrebuildCacheService {
   public cache = new Map();
 
-  public async getData<T>(keyValue: string): Promise<T> {
-    const key = shortHash(keyValue);
+  public async getData<T>(
+    keyData: ICheckTokenArrPriceInUSDandETHArguments | IGetUniswapTransactionByIdArguments,
+  ): Promise<T> {
+    const stringifyKeyData = JSON.stringify(keyData);
+    const key = shortHash(stringifyKeyData);
     try {
       if (this.cache.has(key)) {
         return this.getObjectFromCache<T>(key);
@@ -16,13 +20,20 @@ export class UniswapPrebuildCacheService {
     }
   }
 
-  public async setData<T>(keyValue: string, data: T): Promise<void> {
-    const key = shortHash(keyValue);
+  public async setData<T>(
+    keyData: ICheckTokenArrPriceInUSDandETHArguments | IGetUniswapTransactionByIdArguments,
+    data: T,
+  ): Promise<void> {
+    const stringifyKeyData = JSON.stringify(keyData);
+    const key = shortHash(stringifyKeyData);
     this.setObjectToCache<T>(key, data);
   }
 
-  public async isExist(keyValue: string): Promise<boolean> {
-    const key = shortHash(keyValue);
+  public async isExist(
+    keyData: ICheckTokenArrPriceInUSDandETHArguments | IGetUniswapTransactionByIdArguments,
+  ): Promise<boolean> {
+    const stringifyKeyData = JSON.stringify(keyData);
+    const key = shortHash(stringifyKeyData);
     return this.cache.has(key);
   }
 
