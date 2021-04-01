@@ -8,4 +8,5 @@ interface IisTrustedProviderPattern {
     third: boolean;
 }
 export declare const generateBehaviourConfig: (config: IParserClientConfig) => ITradesBuilderV2BehaviourConfig;
+export declare const virtualTradeBlockNumberOffset = 50;
 export {};

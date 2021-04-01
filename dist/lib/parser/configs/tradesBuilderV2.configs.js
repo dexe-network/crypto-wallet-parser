@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateBehaviourConfig = void 0;
+exports.virtualTradeBlockNumberOffset = exports.generateBehaviourConfig = void 0;
 var interfaces_1 = require("../../interfaces");
 var generateIsTrustedProviderPattern = function (config) {
     if (config.parserMode === interfaces_1.PARSER_MODE.W2W) {
@@ -24,4 +24,5 @@ var generateBehaviourConfig = function (config) {
     };
 };
 exports.generateBehaviourConfig = generateBehaviourConfig;
+exports.virtualTradeBlockNumberOffset = 50;
 //# sourceMappingURL=tradesBuilderV2.configs.js.map

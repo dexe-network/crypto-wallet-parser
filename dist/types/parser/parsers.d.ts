@@ -8,8 +8,8 @@ import { CalculateBalance } from './helpers/calculateBalance';
 import { CalculateTransaction } from './helpers/calculateTransaction';
 import { BehaviorSubject } from 'rxjs';
 import { TradesBuilderV2Prebuild } from './helpers/tradesBuilderV2-prebuild';
-export declare abstract class ParserBase<ConfigType> {
-    protected services: IServices;
+export declare abstract class ParserBase<ConfigType, ServicesType extends IServices> {
+    services: ServicesType;
     protected config: IParserClientConfig;
     rawTransactions: IGroupedTransactions<ITokenBalanceItemBase>[];
     parserProgress: BehaviorSubject<number>;
@@ -23,7 +23,7 @@ export declare abstract class ParserBase<ConfigType> {
     protected tradesBuilderV2Prebuild: TradesBuilderV2Prebuild;
     protected calculateBalance: CalculateBalance;
     protected calculateTransaction: CalculateTransaction;
-    constructor(services: IServices, config: IParserClientConfig);
+    constructor(services: ServicesType, config: IParserClientConfig);
     init(): Promise<void>;
     process(): Promise<IDataProviderResult>;
     private noTransactionsResult;

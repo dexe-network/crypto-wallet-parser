@@ -58,40 +58,43 @@ var ParserBase = /** @class */ (function () {
     ParserBase.prototype.process = function () {
         var _a;
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var rawTransactions, preBuildTrades, cacheRequestData, transactionStep2, transactionStep3, currentDeposit, _b, _c, startDeposit, _d, _e, lastTransactionBlockNumber, transactionsCount, tradesCount, totalIndicators, totalPoints, e_2;
+            var rawTransactions, currentBlockNumber, preBuildTrades, cacheRequestData, transactionStep2, transactionStep3, currentDeposit, _b, _c, startDeposit, _d, _e, lastTransactionBlockNumber, transactionsCount, tradesCount, totalIndicators, totalPoints, e_2;
             return tslib_1.__generator(this, function (_f) {
                 switch (_f.label) {
                     case 0:
-                        _f.trys.push([0, 6, , 7]);
+                        _f.trys.push([0, 7, , 8]);
                         rawTransactions = this.rawTransactions;
                         if (!rawTransactions || rawTransactions.length <= 0) {
                             this.completeStreams();
                             return [2 /*return*/, this.noTransactionsResult()];
                         }
-                        return [4 /*yield*/, this.tradesBuilderV2Prebuild.buildTrades(rawTransactions)];
+                        return [4 /*yield*/, this.services.web3Service.getCurrentBlockNumberLimiter()];
                     case 1:
+                        currentBlockNumber = _f.sent();
+                        return [4 /*yield*/, this.tradesBuilderV2Prebuild.buildTrades(rawTransactions, currentBlockNumber)];
+                    case 2:
                         preBuildTrades = _f.sent();
                         cacheRequestData = this.transformTransaction.buildCacheRequestData(preBuildTrades, rawTransactions);
                         this.estimatedUniswapRequests.next(cacheRequestData.requestsCount);
                         // set progress
                         this.parserProgress.next(85);
                         return [4 /*yield*/, this.parseTransaction.parsePriceAndStoreToCache(cacheRequestData)];
-                    case 2:
+                    case 3:
                         _f.sent();
                         // const transactionStep1 = await this.parseTransaction.parseTransactionBalancePrice(rawTransactions);
                         // set progress
                         this.parserProgress.next(98);
-                        return [4 /*yield*/, this.tradesBuilderV2.buildTrades(rawTransactions)];
-                    case 3:
+                        return [4 /*yield*/, this.tradesBuilderV2.buildTrades(rawTransactions, currentBlockNumber)];
+                    case 4:
                         transactionStep2 = _f.sent();
                         transactionStep3 = this.transformTransaction.transformTokenTradeObjectToArr(transactionStep2);
                         _c = (_b = this.calculateTransaction).getCurrentWalletBalance;
                         return [4 /*yield*/, this.parseTransaction.parseTransactionBalancePriceSingle(rawTransactions[rawTransactions.length - 1])];
-                    case 4:
+                    case 5:
                         currentDeposit = _c.apply(_b, [_f.sent()]);
                         _e = (_d = this.calculateTransaction).getCurrentWalletBalance;
                         return [4 /*yield*/, this.parseTransaction.parseTransactionBalancePriceSingle(rawTransactions[0])];
-                    case 5:
+                    case 6:
                         startDeposit = _e.apply(_d, [_f.sent()]);
                         lastTransactionBlockNumber = ((_a = rawTransactions[rawTransactions.length - 1]) === null || _a === void 0 ? void 0 : _a.blockNumber) || 0;
                         transactionsCount = rawTransactions.length;
@@ -109,12 +112,12 @@ var ParserBase = /** @class */ (function () {
                                 lastCheckBlockNumber: lastTransactionBlockNumber,
                                 trades: transactionStep3,
                             }];
-                    case 6:
+                    case 7:
                         e_2 = _f.sent();
                         this.completeStreams();
                         console.log('🔥 error: %o', e_2);
                         throw e_2;
-                    case 7: return [2 /*return*/];
+                    case 8: return [2 /*return*/];
                 }
             });
         });

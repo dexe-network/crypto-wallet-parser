@@ -6,7 +6,7 @@ export declare class TradesBuilderV2Prebuild {
     private config;
     private behaviourConfig;
     constructor(services: IServices, config: IParserClientConfig);
-    buildTrades(data: IGroupedTransactions<ITokenBalanceItemBase>[]): Promise<IPrebuildTradeIterateObject>;
+    buildTrades(data: IGroupedTransactions<ITokenBalanceItemBase>[], currentBlockNumber: number): Promise<IPrebuildTradeIterateObject>;
     private generateVirtualTrades;
     private generateVirtualTransactions;
     private generateBalanceDiffForVirtualTradePnl;

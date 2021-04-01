@@ -21,7 +21,7 @@ var TradesBuilderV2 = /** @class */ (function () {
         this.parseTransactionWallet = new parseTransaction_1.ParseTransaction(this.services.uniswapService);
         this.behaviourConfig = tradesBuilderV2_configs_1.generateBehaviourConfig(config);
     }
-    TradesBuilderV2.prototype.buildTrades = function (data) {
+    TradesBuilderV2.prototype.buildTrades = function (data, currentBlockNumber) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
             var rawResult, openTrades, withVirtualTrades, virtualTrade;
             return tslib_1.__generator(this, function (_a) {
@@ -33,7 +33,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                             .map(function (x) { return x.trades[x.trades.length - 1]; })
                             .filter(function (x) { return x.tradeStatus === tradesBuilderV2_interface_1.TradeStatus.OPEN; });
                         if (!(openTrades.length > 0)) return [3 /*break*/, 4];
-                        return [4 /*yield*/, this.generateVirtualTrades(openTrades, data[data.length - 1])];
+                        return [4 /*yield*/, this.generateVirtualTrades(openTrades, data[data.length - 1], currentBlockNumber)];
                     case 2:
                         virtualTrade = _a.sent();
                         return [4 /*yield*/, this.behaviourIterator(virtualTrade, rawResult)];
@@ -45,22 +45,16 @@ var TradesBuilderV2 = /** @class */ (function () {
             });
         });
     };
-    TradesBuilderV2.prototype.generateVirtualTrades = function (openTrades, lastGroupedTransaction) {
+    TradesBuilderV2.prototype.generateVirtualTrades = function (openTrades, lastGroupedTransaction, currentBlockNumber) {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var currentBlockNumber, e_1;
             return tslib_1.__generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4 /*yield*/, this.services.web3Service.getCurrentBlockNumberLimiter()];
-                    case 1:
-                        currentBlockNumber = _a.sent();
-                        return [2 /*return*/, this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber)];
-                    case 2:
-                        e_1 = _a.sent();
-                        throw e_1;
-                    case 3: return [2 /*return*/];
+                try {
+                    return [2 /*return*/, this.generateVirtualTransactions(openTrades, lastGroupedTransaction, currentBlockNumber)];
                 }
+                catch (e) {
+                    throw e;
+                }
+                return [2 /*return*/];
             });
         });
     };
@@ -75,7 +69,7 @@ var TradesBuilderV2 = /** @class */ (function () {
                 erc721Transactions: [],
                 balanceBeforeTransaction: balanceBeforeTransaction,
                 balance: _this.generateBalanceDiffForVirtualTradePnl(value, balanceBeforeTransaction),
-                blockNumber: currentBlockNumber - 10,
+                blockNumber: currentBlockNumber - tradesBuilderV2_configs_1.virtualTradeBlockNumberOffset,
                 previousTransactionBlockNumber: lastGroupedTransaction.blockNumber,
                 feeInETH: new bignumber_js_1.default(0),
                 isVirtualTransaction: true,
@@ -112,8 +106,8 @@ var TradesBuilderV2 = /** @class */ (function () {
             return tslib_1.__generator(this, function (_a) {
                 // console.log('behaviourIterator', data.length);
                 return [2 /*return*/, data.reduce(function (accumulatorValuePromise, currentItem, index) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
-                        var accumulatorValue, stateBase, _a, _b, operation, e_2_1, _c, _d, operation, e_3_1;
-                        var e_2, _e, e_3, _f;
+                        var accumulatorValue, stateBase, _a, _b, operation, e_1_1, _c, _d, operation, e_2_1;
+                        var e_1, _e, e_2, _f;
                         return tslib_1.__generator(this, function (_g) {
                             switch (_g.label) {
                                 case 0: return [4 /*yield*/, accumulatorValuePromise];
@@ -151,14 +145,14 @@ var TradesBuilderV2 = /** @class */ (function () {
                                     return [3 /*break*/, 4];
                                 case 9: return [3 /*break*/, 12];
                                 case 10:
-                                    e_2_1 = _g.sent();
-                                    e_2 = { error: e_2_1 };
+                                    e_1_1 = _g.sent();
+                                    e_1 = { error: e_1_1 };
                                     return [3 /*break*/, 12];
                                 case 11:
                                     try {
                                         if (_b && !_b.done && (_e = _a.return)) _e.call(_a);
                                     }
-                                    finally { if (e_2) throw e_2.error; }
+                                    finally { if (e_1) throw e_1.error; }
                                     return [7 /*endfinally*/];
                                 case 12: return [3 /*break*/, 20];
                                 case 13:
@@ -180,14 +174,14 @@ var TradesBuilderV2 = /** @class */ (function () {
                                     return [3 /*break*/, 14];
                                 case 17: return [3 /*break*/, 20];
                                 case 18:
-                                    e_3_1 = _g.sent();
-                                    e_3 = { error: e_3_1 };
+                                    e_2_1 = _g.sent();
+                                    e_2 = { error: e_2_1 };
                                     return [3 /*break*/, 20];
                                 case 19:
                                     try {
                                         if (_d && !_d.done && (_f = _c.return)) _f.call(_c);
                                     }
-                                    finally { if (e_3) throw e_3.error; }
+                                    finally { if (e_2) throw e_2.error; }
                                     return [7 /*endfinally*/];
                                 case 20: return [2 /*return*/, accumulatorValue];
                             }
@@ -284,7 +278,7 @@ var TradesBuilderV2 = /** @class */ (function () {
         }
     };
     TradesBuilderV2.prototype.createIterateSellEvents = function (tradeEvent, data, openTradeIndex) {
-        var e_4, _a;
+        var e_3, _a;
         var sellOperationAmount = tradeEvent.amount.negated();
         try {
             // write sell event from buy
@@ -352,12 +346,12 @@ var TradesBuilderV2 = /** @class */ (function () {
                 }
             }
         }
-        catch (e_4_1) { e_4 = { error: e_4_1 }; }
+        catch (e_3_1) { e_3 = { error: e_3_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
-            finally { if (e_4) throw e_4.error; }
+            finally { if (e_3) throw e_3.error; }
         }
     };
     TradesBuilderV2.prototype.openNewTrade = function (state, operation, balanceBeforeTransaction) {
@@ -514,7 +508,7 @@ var TradesBuilderV2 = /** @class */ (function () {
     TradesBuilderV2.prototype.getTokenOperationState = function (currentData) {
         var _a, _b;
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var state, balancesDifferencesData, normalTransaction, uniswapTransactionData, e_5;
+            var state, balancesDifferencesData, normalTransaction, uniswapTransactionData, e_4;
             return tslib_1.__generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -565,8 +559,8 @@ var TradesBuilderV2 = /** @class */ (function () {
                         _c.label = 3;
                     case 3: return [2 /*return*/, state];
                     case 4:
-                        e_5 = _c.sent();
-                        throw e_5;
+                        e_4 = _c.sent();
+                        throw e_4;
                     case 5: return [2 /*return*/];
                 }
             });
@@ -575,7 +569,7 @@ var TradesBuilderV2 = /** @class */ (function () {
     TradesBuilderV2.prototype.getTokenOperationPrice = function (stateBase, currentData) {
         var _a, _b;
         return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var stateWithPrices, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_6;
+            var stateWithPrices, normalTransaction, uniswapTransactionData, operationPriceUniRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, operationPriceOtherRaw, transactionFeeETH, transactionFeeUSD, operationPriceIncludeFee, e_5;
             return tslib_1.__generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -645,8 +639,8 @@ var TradesBuilderV2 = /** @class */ (function () {
                         _c.label = 3;
                     case 3: return [2 /*return*/, stateWithPrices];
                     case 4:
-                        e_6 = _c.sent();
-                        throw e_6;
+                        e_5 = _c.sent();
+                        throw e_5;
                     case 5: return [2 /*return*/];
                 }
             });
@@ -656,7 +650,7 @@ var TradesBuilderV2 = /** @class */ (function () {
         return tslib_1.__assign(tslib_1.__assign({}, operationPrice), { amountInUSD: operationPrice.amountInUSD.plus(feeUSD), amountInETH: operationPrice.amountInETH.plus(feeETH) });
     };
     TradesBuilderV2.prototype.balanceDifferences = function (currentBalance, beforeBalance, parsedFeeInETH) {
-        var e_7, _a;
+        var e_6, _a;
         var _b, _c, _d, _e;
         var tokensAddress = lodash_1.default.uniq(tslib_1.__spreadArray(tslib_1.__spreadArray([], tslib_1.__read(Object.keys(currentBalance))), tslib_1.__read(Object.keys(beforeBalance))));
         var diffs = [];
@@ -698,12 +692,12 @@ var TradesBuilderV2 = /** @class */ (function () {
                 }
             }
         }
-        catch (e_7_1) { e_7 = { error: e_7_1 }; }
+        catch (e_6_1) { e_6 = { error: e_6_1 }; }
         finally {
             try {
                 if (tokensAddress_1_1 && !tokensAddress_1_1.done && (_a = tokensAddress_1.return)) _a.call(tokensAddress_1);
             }
-            finally { if (e_7) throw e_7.error; }
+            finally { if (e_6) throw e_6.error; }
         }
         return {
             differences: diffs.filter(function (x) { return !stableCoins_1.stableCoinList.some(function (y) { return y.address === x.address.toLowerCase(); }); }),

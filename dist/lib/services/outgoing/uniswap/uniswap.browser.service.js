@@ -13,11 +13,14 @@ var UniswapServiceClient = /** @class */ (function (_super) {
         var _this = _super.call(this) || this;
         _this.config = config;
         _this.limiter = new bottleneck_1.default({
-            minTime: 200,
+            minTime: 100,
             maxConcurrent: 5,
         });
         _this.clientGQ = new graphql_request_1.GraphQLClient(defaultConfig_1.default.uniswap.uniswapGQLEndpointUrl);
         _this.uniswapCacheService = new uniswapPrebuildCache_service_1.UniswapPrebuildCacheService();
+        if (_this.config.cache) {
+            _this.uniswapCacheService.cache = new Map(Object.entries(_this.config.cache));
+        }
         return _this;
     }
     return UniswapServiceClient;

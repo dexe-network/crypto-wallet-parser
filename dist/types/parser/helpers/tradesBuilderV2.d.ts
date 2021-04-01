@@ -8,7 +8,7 @@ export declare class TradesBuilderV2 {
     private parseTransactionWallet;
     private behaviourConfig;
     constructor(services: IServices, config: IParserClientConfig);
-    buildTrades(data: IGroupedTransactions<ITokenBalanceItemBase>[]): Promise<ITradeIterateObject>;
+    buildTrades(data: IGroupedTransactions<ITokenBalanceItemBase>[], currentBlockNumber: number): Promise<ITradeIterateObject>;
     private generateVirtualTrades;
     private generateVirtualTransactions;
     private generateBalanceDiffForVirtualTradePnl;

@@ -7,6 +7,6 @@ export declare class UniswapServiceClient extends UniswapServiceBase {
     protected config: IParserClientConfig;
     protected limiter: Bottleneck;
     protected clientGQ: GraphQLClient;
-    protected uniswapCacheService: UniswapPrebuildCacheService;
+    uniswapCacheService: UniswapPrebuildCacheService;
     constructor(config: IParserClientConfig);
 }
