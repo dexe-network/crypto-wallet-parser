@@ -1,5 +1,5 @@
 import IORedis from 'ioredis';
-import shortHash from 'shorthash2';
+import shortHash from 'object-hash';
 import {
   ICheckTokenArrPriceInUSDandETHArguments,
   IGetUniswapTransactionByIdArguments,
@@ -16,8 +16,7 @@ export class UniswapCacheService {
   public async getData<T>(
     keyData: ICheckTokenArrPriceInUSDandETHArguments | IGetUniswapTransactionByIdArguments,
   ): Promise<T> {
-    const stringifyKeyData = JSON.stringify(keyData);
-    const key = shortHash(stringifyKeyData);
+    const key = shortHash(keyData);
     try {
       if (await this.redis.exists(key)) {
         return this.getObjectFromRedis<T>(key);
@@ -33,16 +32,14 @@ export class UniswapCacheService {
     keyData: ICheckTokenArrPriceInUSDandETHArguments | IGetUniswapTransactionByIdArguments,
     data: T,
   ): Promise<void> {
-    const stringifyKeyData = JSON.stringify(keyData);
-    const key = shortHash(stringifyKeyData);
+    const key = shortHash(keyData);
     await this.setObjectToRedis<T>(key, data);
   }
 
   public async isExist(
     keyData: ICheckTokenArrPriceInUSDandETHArguments | IGetUniswapTransactionByIdArguments,
   ): Promise<boolean> {
-    const stringifyKeyData = JSON.stringify(keyData);
-    const key = shortHash(stringifyKeyData);
+    const key = shortHash(keyData);
     return !!(await this.redis.exists(key));
   }
 
