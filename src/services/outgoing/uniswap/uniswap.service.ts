@@ -169,7 +169,7 @@ export abstract class UniswapServiceBase {
       }, {} as IArrTokenPriceCheckResult);
 
       // Write data to cache
-      if (dataResult && !(await this.uniswapCacheService.isExist(argumentsData))) {
+      if (!(await this.uniswapCacheService.isExist(argumentsData))) {
         await this.uniswapCacheService.setData<IArrTokenPriceCheckResult>(argumentsData, dataResult);
       }
 
@@ -333,7 +333,7 @@ export abstract class UniswapServiceBase {
       });
 
       // Write data to cache
-      if (dataResult && !(await this.uniswapCacheService.isExist(argumentsData))) {
+      if (!(await this.uniswapCacheService.isExist(argumentsData))) {
         await this.uniswapCacheService.setData<IUniswapRawTransaction>(argumentsData, dataResult);
       }
 
